@@ -55,10 +55,10 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
 
 1. **Kickoff: confirm scope, Track, DoD**  
    - **What**: Align on overall scope, choose Track(s), define Definition of Done.  
-   - **Why**: Everyone agrees what “done” means and what will be delivered.  
+   - **Why**: Everyone agrees what "done" means and what will be delivered.  
    - **Depends on**: —  
    - **Output**: `docs/scope.md` with scope + DoD.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: Scope and success criteria are written down and agreed.
 
 2. **Create repo and folders (`service/`, `agent/`, `tests/`, `docs/`, `ui/`)**  
@@ -66,7 +66,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
    - **Why**: Clear structure → easier navigation and maintainability.  
    - **Depends on**: Step 1  
    - **Output**: Repo skeleton committed.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: All folders exist and are checked in.
 
 3. **Set up dev environment, dependencies, and `.env` layer**  
@@ -74,7 +74,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
    - **Why**: Everyone can install and run the project the same way.  
    - **Depends on**: Step 2  
    - **Output**: `requirements.txt`, `.env.example`, working local run.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: New dev can clone, install, and start the app without errors.
 
 4. **Define API schemas (Pydantic models)**  
@@ -82,7 +82,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
    - **Why**: Strong validation and automatic OpenAPI generation.  
    - **Depends on**: Step 3  
    - **Output**: `service/schemas.py` with `AnalyzeRequest`, `AnalyzeResponse`, `ApodResponse`.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: Models match the spec and show correctly in Swagger.
 
 5. **Implement service endpoints: `/analyze` (+ optional `/apod/today`)**  
@@ -90,7 +90,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
    - **Why**: Expose the core functionality over HTTP.  
    - **Depends on**: Step 4  
    - **Output**: `service/routes.py` with working endpoints.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: Swagger UI shows both endpoints and they return stub/real responses.
 
 6. **Build Open-Meteo tools (air quality + weather)**  
@@ -98,7 +98,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
    - **Why**: Get free weather and air quality data with no API key.  
    - **Depends on**: Step 3  
    - **Output**: `agent/tools/open_meteo.py` returning real JSON from Open-Meteo.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: Manual calls return the expected JSON payloads.
 
 7. **Add retry/backoff helper for HTTP calls**  
@@ -106,7 +106,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
    - **Why**: Make external calls resilient to 429/5xx and network hiccups.  
    - **Depends on**: Step 3  
    - **Output**: `agent/retry.py` used by all HTTP tools.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: Retries on retryable errors and respects timeouts.
 
 8. **Validation of inputs and payloads**  
@@ -114,7 +114,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
    - **Why**: Enforce quality gates and detect sparse/missing data.  
    - **Depends on**: Steps 4–7  
    - **Output**: `agent/validate.py` with `DataQualityFlags` and validation helpers.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: Invalid lat/lon are rejected and bad payloads are flagged correctly.
 
 9. **Compute safe averages**  
@@ -122,7 +122,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
    - **Why**: Correct statistics even when some values are missing.  
    - **Depends on**: Step 8  
    - **Output**: `agent/compute.py`.  
-   - **Status**: ⬜ Not Started  
+   - **Status**: 🟩 Done  
    - **Done when**: Averages ignore `None` and return `None` when no valid data exists.
 
 10. **Implement cache with 10‑minute TTL**  
@@ -130,15 +130,15 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Reduce external calls and improve response times.  
     - **Depends on**: Step 3  
     - **Output**: `agent/cache.py` with `cache_key`, `ttl_cache_get`, `ttl_cache_set`.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟩 Done  
     - **Done when**: Cache hits and misses are observable in logs.
 
 11. **Minimal planner**  
     - **What**: Implement `plan_for_analyze` in `agent/planner.py`.  
-    - **Why**: Give the system an “agent feel” and explicit tool selection.  
+    - **Why**: Give the system an "agent feel" and explicit tool selection.  
     - **Depends on**: Step 8  
     - **Output**: `agent/planner.py` returning which tools/variables to use.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟩 Done  
     - **Done when**: Planner returns a consistent plan for `/analyze`.
 
 12. **GitHub Models LLM tool**  
@@ -146,7 +146,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Turn numeric data into human-friendly guidance with fallback.  
     - **Depends on**: Step 3  
     - **Output**: `agent/tools/github_models_llm.py`.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟩 Done  
     - **Done when**: Returns guidance text and falls back gracefully if LLM fails.
 
 13. **Prompt library for the LLM**  
@@ -154,7 +154,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Ensure consistent, safe, and concise responses.  
     - **Depends on**: Step 12  
     - **Output**: `agent/prompts/*` files.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟩 Done  
     - **Done when**: Generated guidance is actionable, 3–6 sentences, with uncertainty notes when needed.
 
 14. **Agent orchestrator (plan → fetch → validate → cache → LLM)**  
@@ -162,15 +162,15 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Central agentic flow coordinating all tools and logic.  
     - **Depends on**: Steps 6–13  
     - **Output**: `agent/orchestrator.py`.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟩 Done  
     - **Done when**: `/analyze` works end-to-end with real data and LLM guidance.
 
 15. **Attribution enforcement**  
-    - **What**: Always append “Weather data by Open-Meteo.com” to guidance.  
+    - **What**: Always append "Weather data by Open-Meteo.com" to guidance.  
     - **Why**: Fulfills the attribution requirement.  
     - **Depends on**: Step 14  
     - **Output**: Global rule in orchestrator or response builder.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟩 Done  
     - **Done when**: Every `/analyze` response includes the attribution string.
 
 16. **Web UI or CLI (Track B demo)**  
@@ -178,7 +178,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Provide a human-friendly way to demo the system.  
     - **Depends on**: Step 14  
     - **Output**: `ui/web/*` or CLI script.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟨 In Progress  
     - **Done when**: A user can input coords/hours and see averages + guidance.
 
 17. **Unit tests**  
@@ -260,6 +260,13 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Output**: Release artifact or tag, plus final checklist.  
     - **Status**: ⬜ Not Started  
     - **Done when**: All deliverables are present and validated.
+
+---
+
+## 2.1) Bonus: NASA APOD Tool
+- **What**: Implemented `GET /apod/today` endpoint with `agent/tools/nasa_apod.py`
+- **Status**: 🟩 Done
+- **Output**: Returns `{ title, url, explanation }` from NASA APOD API
 
 ---
 

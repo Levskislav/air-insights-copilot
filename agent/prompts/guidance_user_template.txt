@@ -1,0 +1,16 @@
+Location: latitude {lat}, longitude {lon}
+Time window: next {hours} hours
+
+## Current Data:
+- PM2.5 (fine particles): {pm25} μg/m³
+- PM10 (coarse particles): {pm10} μg/m³
+- Temperature: {temp} °C
+
+## Data Quality:
+- Air data sparse/missing: {sparse_air}
+- Weather data sparse/missing: {sparse_weather}
+- Missing fields: {missing_fields}
+
+## Question:
+Based on this data, is it a good time for outdoor activities like running or cycling?
+Provide specific guidance and any precautions to consider.
