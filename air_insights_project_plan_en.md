@@ -178,7 +178,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Provide a human-friendly way to demo the system.  
     - **Depends on**: Step 14  
     - **Output**: `ui/web/*` or CLI script.  
-    - **Status**: 🟨 In Progress  
+    - **Status**: ⏭️ Skipped (using Track A: Copilot Studio instead)  
     - **Done when**: A user can input coords/hours and see averages + guidance.
 
 17. **Unit tests**  
