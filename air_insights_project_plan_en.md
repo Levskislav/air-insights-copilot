@@ -234,7 +234,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Speed up Track A integration.  
     - **Depends on**: Step 21  
     - **Output**: `docs/copilot_tool_snippet.md`.  
-    - **Status**: 🟨 In Progress  
+    - **Status**: 🟩 Done  
     - **Done when**: Snippet can be used directly in Copilot Studio.
 
 24. **Screenshots for Track B UI/CLI**  
@@ -250,7 +250,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Enable the assistant to call the API as a Tool.  
     - **Depends on**: Step 21 + Copilot access  
     - **Output**: Copilot Tool configuration.  
-    - **Status**: 🟨 In Progress  
+    - **Status**: 🟩 Done  
     - **Done when**: Chat in Copilot successfully invokes the Tool.
 
 26. **Final review and release**  
