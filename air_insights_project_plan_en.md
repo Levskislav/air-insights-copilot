@@ -1,6 +1,8 @@
-# Project Plan (EN): Agentic “Air & Insights Copilot”
+# Project Plan (EN): Agentic "OutdoorMate" (formerly Air & Insights Copilot)
 
-This is a **step-by-step project plan with progress statuses** for the “Air & Insights Copilot” agent.
+This is a **step-by-step project plan with progress statuses** for the "OutdoorMate" agent.
+
+> **Note**: Project renamed to "OutdoorMate" to reflect planned expansions: snow tracking, geocoding, route weather forecasts.
 
 ## Project goal
 Build an **agentic assistant** that:
@@ -274,9 +276,35 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
 - **Public URL**: `https://humble-winner-g7wwrw4rp9rcxvq-8000.app.github.dev`
 - **Output**: API publicly accessible for Copilot Studio integration
 
+## 2.3) Track A: Copilot Studio Integration - SUCCESS ✅
+- **What**: Created "OutdoorMate" agent in Microsoft Copilot Studio
+- **Status**: 🟩 Done (23 Dec 2025)
+- **Tool Name**: `Analyze air quality and weather`
+- **Response Time**: ~1.17s
+- **Test Results**:
+  - Input: Sofia, Bulgaria (42.6977, 23.3219)
+  - PM2.5: 46.8 μg/m³ (Unhealthy)
+  - PM10: 50.2 μg/m³
+  - Temperature: 4.6°C
+  - AI Guidance: Generated successfully via GitHub Models LLM
+- **OpenAPI File**: `service/openapi_copilot.json` (version 3.0.3)
+
 ---
 
-## 3) Fast MVP path
+## 3) Progress Summary
+
+| Category | Completed | Total | Status |
+|----------|-----------|-------|--------|
+| Core API (Steps 1-15) | 15 | 15 | ✅ 100% |
+| Track A Copilot (Steps 21, 23, 25) | 3 | 3 | ✅ 100% |
+| Track B Web UI (Step 16) | - | - | ⏭️ Skipped |
+| Tests & Docs (Steps 17-20, 22, 24, 26) | 0 | 7 | ⬜ Optional |
+
+**MVP Status: COMPLETE** 🎉
+
+---
+
+## 4) Fast MVP path
 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 22 → 24 → 21
 
 ---
