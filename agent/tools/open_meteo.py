@@ -156,6 +156,185 @@ async def fetch_weather(lat: float, lon: float, hours: int) -> dict[str, Any]:
 
 
 # =============================================================================
+# SNOW FUNCTION
+# =============================================================================
+
+async def fetch_snow(lat: float, lon: float, hours: int) -> dict[str, Any]:
+    """
+    Fetch snow data (snowfall, snow depth) from Open-Meteo.
+    
+    Args:
+        lat: Latitude coordinate (-90 to 90)
+        lon: Longitude coordinate (-180 to 180)
+        hours: Number of hours to forecast (1-168)
+        
+    Returns:
+        Raw JSON response from Open-Meteo containing:
+        - hourly.time: List of ISO timestamps
+        - hourly.snowfall: List of snowfall values (cm per hour)
+        - hourly.snow_depth: List of snow depth values (cm on ground)
+        
+    Example response:
+        {
+            "latitude": 42.7,
+            "longitude": 23.3,
+            "hourly": {
+                "time": ["2024-12-23T00:00", ...],
+                "snowfall": [0.0, 0.5, 1.2, ...],
+                "snow_depth": [15.0, 15.5, 16.7, ...]
+            }
+        }
+        
+    Note:
+        - snowfall: Amount of snow falling per hour (cm)
+        - snow_depth: Total accumulated snow on the ground (cm)
+    """
+    
+    # Build query parameters for the API
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        # Request snowfall and snow depth in the hourly data
+        "hourly": "snowfall,snow_depth",
+        # Limit forecast to requested hours
+        "forecast_hours": hours,
+        # Auto-detect timezone based on coordinates
+        "timezone": "auto"
+    }
+    
+    # Get timeout from environment or use default
+    timeout = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10.0"))
+    
+    # Make the API call with retry support
+    response = await request_with_retry(
+        method="GET",
+        url=WEATHER_FORECAST_URL,
+        params=params,
+        timeout=timeout
+    )
+    
+    print(f"[open-meteo] Snow data fetched for ({lat}, {lon})")
+    
+    return response
+
+
+# =============================================================================
+# ROAD CONDITIONS FUNCTION (Full weather for route)
+# =============================================================================
+
+async def fetch_road_conditions(lat: float, lon: float, hours: int) -> dict[str, Any]:
+    """
+    Fetch comprehensive road conditions data from Open-Meteo.
+    
+    Includes all weather parameters relevant for driving:
+    - Temperature
+    - Rain
+    - Snow
+    - Visibility (fog detection)
+    - Wind speed
+    - Weather code (general conditions)
+    - Cloud cover
+    
+    Args:
+        lat: Latitude coordinate (-90 to 90)
+        lon: Longitude coordinate (-180 to 180)
+        hours: Number of hours to forecast (1-168)
+        
+    Returns:
+        Raw JSON response with comprehensive weather data
+        
+    Weather codes (WMO):
+        0: Clear sky
+        1-3: Partly cloudy
+        45, 48: Fog
+        51-55: Drizzle
+        61-65: Rain
+        71-75: Snow
+        80-82: Rain showers
+        85-86: Snow showers
+        95-99: Thunderstorm
+    """
+    
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": ",".join([
+            "temperature_2m",      # Temperature
+            "rain",                # Rain (mm)
+            "showers",             # Showers (mm)
+            "snowfall",            # Snow (cm)
+            "snow_depth",          # Snow on ground (cm)
+            "visibility",          # Visibility (m) - for fog
+            "wind_speed_10m",      # Wind speed (km/h)
+            "wind_gusts_10m",      # Wind gusts (km/h)
+            "weather_code",        # WMO weather code
+            "cloud_cover",         # Cloud cover (%)
+            "precipitation_probability"  # Chance of precipitation
+        ]),
+        "forecast_hours": hours,
+        "timezone": "auto"
+    }
+    
+    timeout = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10.0"))
+    
+    response = await request_with_retry(
+        method="GET",
+        url=WEATHER_FORECAST_URL,
+        params=params,
+        timeout=timeout
+    )
+    
+    return response
+
+
+def interpret_weather_code(code: int | None) -> str:
+    """
+    Convert WMO weather code to human-readable condition.
+    
+    Args:
+        code: WMO weather code (0-99)
+        
+    Returns:
+        Human-readable weather condition
+    """
+    if code is None:
+        return "Unknown"
+    
+    conditions = {
+        0: "Clear sky ☀️",
+        1: "Mainly clear 🌤️",
+        2: "Partly cloudy ⛅",
+        3: "Overcast ☁️",
+        45: "Fog 🌫️",
+        48: "Freezing fog 🌫️❄️",
+        51: "Light drizzle 🌧️",
+        53: "Moderate drizzle 🌧️",
+        55: "Dense drizzle 🌧️",
+        56: "Freezing drizzle 🌧️❄️",
+        57: "Heavy freezing drizzle 🌧️❄️",
+        61: "Light rain 🌧️",
+        63: "Moderate rain 🌧️",
+        65: "Heavy rain 🌧️💨",
+        66: "Freezing rain ❄️🌧️",
+        67: "Heavy freezing rain ❄️🌧️",
+        71: "Light snow 🌨️",
+        73: "Moderate snow 🌨️",
+        75: "Heavy snow 🌨️❄️",
+        77: "Snow grains 🌨️",
+        80: "Light rain showers 🌦️",
+        81: "Moderate rain showers 🌦️",
+        82: "Violent rain showers ⛈️",
+        85: "Light snow showers 🌨️",
+        86: "Heavy snow showers 🌨️❄️",
+        95: "Thunderstorm ⛈️",
+        96: "Thunderstorm with hail ⛈️🧊",
+        99: "Severe thunderstorm ⛈️💨"
+    }
+    
+    return conditions.get(code, f"Weather code {code}")
+
+
+# =============================================================================
 # COMBINED FUNCTION (optional convenience)
 # =============================================================================
 

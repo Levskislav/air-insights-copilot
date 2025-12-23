@@ -56,6 +56,8 @@ def _build_messages(
     pm25_avg: float | None,
     pm10_avg: float | None,
     temp_avg: float | None,
+    snowfall_sum: float | None,
+    snow_depth_avg: float | None,
     hours: int,
     lat: float,
     lon: float,
@@ -70,6 +72,8 @@ def _build_messages(
         pm25_avg: Average PM2.5 concentration
         pm10_avg: Average PM10 concentration
         temp_avg: Average temperature
+        snowfall_sum: Total snowfall in cm
+        snow_depth_avg: Average snow depth in cm
         hours: Time window in hours
         lat: Latitude
         lon: Longitude
@@ -90,6 +94,8 @@ def _build_messages(
         pm25=pm25_avg if pm25_avg is not None else "N/A",
         pm10=pm10_avg if pm10_avg is not None else "N/A",
         temp=temp_avg if temp_avg is not None else "N/A",
+        snowfall_sum=snowfall_sum if snowfall_sum is not None else "N/A",
+        snow_depth_avg=snow_depth_avg if snow_depth_avg is not None else "N/A",
         sparse_air=flags.sparse_air,
         sparse_weather=flags.sparse_weather,
         missing_fields=", ".join(flags.missing_fields) if flags.missing_fields else "none"
@@ -109,6 +115,8 @@ def _fallback_guidance(
     pm25_avg: float | None,
     pm10_avg: float | None,
     temp_avg: float | None,
+    snowfall_sum: float | None,
+    snow_depth_avg: float | None,
     hours: int,
     flags: QualityFlags
 ) -> str:
@@ -122,6 +130,8 @@ def _fallback_guidance(
         pm25_avg: Average PM2.5 concentration
         pm10_avg: Average PM10 concentration
         temp_avg: Average temperature
+        snowfall_sum: Total snowfall in cm
+        snow_depth_avg: Average snow depth in cm
         hours: Time window in hours
         flags: Data quality flags
         
@@ -150,6 +160,15 @@ def _fallback_guidance(
     if temp_avg is not None:
         parts.append(f"Temperature averages {temp_avg:.1f}°C.")
     
+    # Snow info
+    if snowfall_sum is not None and snowfall_sum > 0:
+        parts.append(f"🌨️ Expected snowfall: {snowfall_sum:.1f} cm.")
+        if snowfall_sum > 5:
+            parts.append("Heavy snow expected - drive carefully!")
+    
+    if snow_depth_avg is not None and snow_depth_avg > 0:
+        parts.append(f"Snow depth: {snow_depth_avg:.1f} cm on the ground.")
+    
     # General advice
     parts.append("If you experience any symptoms, stop activity and move indoors.")
     
@@ -165,6 +184,8 @@ async def generate_guidance_text(
     pm25_avg: float | None,
     pm10_avg: float | None,
     temp_avg: float | None,
+    snowfall_sum: float | None = None,
+    snow_depth_avg: float | None = None,
     hours: int,
     lat: float,
     lon: float,
@@ -183,6 +204,8 @@ async def generate_guidance_text(
         pm25_avg: Average PM2.5 concentration (μg/m³)
         pm10_avg: Average PM10 concentration (μg/m³)
         temp_avg: Average temperature (°C)
+        snowfall_sum: Total snowfall (cm) for the time window
+        snow_depth_avg: Average snow depth (cm) on the ground
         hours: Time window in hours
         lat: Latitude
         lon: Longitude
@@ -202,12 +225,12 @@ async def generate_guidance_text(
     # If no token configured, use fallback immediately
     if not token or token == "replace_me_with_your_github_pat":
         print("[llm] No GitHub token configured, using fallback guidance")
-        return _fallback_guidance(pm25_avg, pm10_avg, temp_avg, hours, flags)
+        return _fallback_guidance(pm25_avg, pm10_avg, temp_avg, snowfall_sum, snow_depth_avg, hours, flags)
     
     try:
         # Build the messages for the LLM
         messages = _build_messages(
-            pm25_avg, pm10_avg, temp_avg,
+            pm25_avg, pm10_avg, temp_avg, snowfall_sum, snow_depth_avg,
             hours, lat, lon, flags
         )
         
@@ -245,4 +268,4 @@ async def generate_guidance_text(
         # LLM failed - log error and use fallback
         print(f"[llm] Error calling GitHub Models: {e}")
         print("[llm] Using fallback guidance")
-        return _fallback_guidance(pm25_avg, pm10_avg, temp_avg, hours, flags)
+        return _fallback_guidance(pm25_avg, pm10_avg, temp_avg, snowfall_sum, snow_depth_avg, hours, flags)

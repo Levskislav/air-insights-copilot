@@ -1,7 +1,53 @@
-# Technical Execution Steps (EN) — Air & Insights Copilot
+# Technical Execution Steps (EN) — OutdoorMate
 
 This file is a **hands-on runbook**: exactly what to do, where, and how to implement the project.  
-Target: **Track B first** (FastAPI + minimal web UI/CLI), keeping the same **OpenAPI contract** for later Copilot Studio wiring.
+Target: **Track A** (FastAPI + Copilot Studio integration).
+
+> **Project renamed**: Air & Insights Copilot → **OutdoorMate**
+
+---
+
+## Current Status (23 Dec 2025)
+
+### ✅ Completed (MVP)
+| Step | Description | Status |
+|------|-------------|--------|
+| 1-15 | Core API (air quality, weather, LLM guidance) | ✅ Done |
+| 21 | Export OpenAPI 3.0 | ✅ Done |
+| 22 | GitHub Codespaces deployment | ✅ Done |
+| 23 | Copilot tool snippet | ✅ Done |
+| 25 | Copilot Studio integration | ✅ Done |
+
+### 📍 Public API URL
+```
+https://humble-winner-g7wwrw4rp9rcxvq-8000.app.github.dev
+```
+
+### 🎯 Working Endpoints
+- `POST /analyze` - Air quality + weather + AI guidance
+- `GET /apod/today` - NASA Astronomy Picture of the Day
+- `GET /` - Health check
+
+---
+
+## Planned Features (Phase 2)
+
+### Feature A: Snow Data 🌨️
+- **What**: Snowfall and snow depth tracking
+- **API**: Open-Meteo (free, no key needed)
+- **Endpoint**: Extend `/analyze` or new `/snow`
+
+### Feature B: Geocoding 📍
+- **What**: Convert place names to coordinates
+- **API**: Google Maps Geocoding API (requires key)
+- **Endpoint**: New `/geocode` or integrated into `/analyze`
+- **Benefit**: User types "Sofia" instead of coordinates
+
+### Feature C: Route Weather 🚗
+- **What**: Weather forecast along a driving route (A → B)
+- **APIs**: Google Directions API + Open-Meteo
+- **Endpoint**: New `/route-weather`
+- **Use case**: "What's the weather on my trip from Sofia to Plovdiv?"
 
 ---
 
@@ -664,3 +710,537 @@ You can satisfy the “public HTTPS API” requirement using **GitHub Codespaces
     - configuring the Tool,
     - running demo prompts,
     - capturing screenshots or a short demo video.
+
+---
+
+# Phase 2: New Features Implementation
+
+## 21) Feature A: Snow Data 🌨️
+
+### 21.1) Update Open-Meteo tool for snow
+
+**agent/tools/open_meteo.py** — add new function:
+```python
+async def fetch_snow(lat: float, lon: float, hours: int):
+    """
+    Fetch snowfall and snow depth from Open-Meteo.
+    
+    Returns:
+        - snowfall: cm per hour (snow precipitation)
+        - snow_depth: cm (accumulated snow on ground)
+    """
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "hourly": "snowfall,snow_depth",
+        "forecast_hours": hours,
+        "timezone": "auto"
+    }
+    timeout = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10.0"))
+    return await request_with_retry("GET", WX_URL, params=params, timeout=timeout)
+```
+
+### 21.2) Update schemas
+
+**service/schemas.py** — extend AnalyzeResponse:
+```python
+class AnalyzeResponse(BaseModel):
+    pm25_avg: float | None
+    pm10_avg: float | None
+    temp_avg: float | None
+    # NEW: Snow data
+    snowfall_sum: float | None = Field(None, description="Total snowfall in cm")
+    snow_depth_avg: float | None = Field(None, description="Average snow depth in cm")
+    guidance_text: str
+```
+
+### 21.3) Update orchestrator
+
+Add snow fetching to `analyze_air_and_weather()`:
+```python
+# In orchestrator.py - add snow data
+snow_json = await fetch_snow(lat, lon, hours) if plan.get("need_snow") else None
+
+# Extract snow arrays
+snowfall = _get_hourly_array(snow_json, "snowfall") if snow_json else None
+snow_depth = _get_hourly_array(snow_json, "snow_depth") if snow_json else None
+
+# Compute
+snowfall_sum = sum(s for s in (snowfall or []) if s is not None)
+snow_depth_avg = safe_avg(snow_depth)
+```
+
+### 21.4) Update LLM prompts
+
+**agent/prompts/guidance_user_template.txt** — add:
+```txt
+Snow conditions:
+- Snowfall (next {hours}h): {snowfall_sum} cm
+- Snow depth: {snow_depth_avg} cm
+```
+
+---
+
+## 22) Feature B: Geocoding (Place Names → Coordinates) 📍
+
+### 22.1) Get Google Maps API Key
+
+1. Go to: https://console.cloud.google.com/
+2. Create project or select existing
+3. Enable "Geocoding API"
+4. Create API Key
+5. Add to `.env`:
+   ```env
+   GOOGLE_MAPS_API_KEY=your_key_here
+   ```
+
+### 22.2) Create geocoding tool
+
+**agent/tools/google_geocoding.py**
+```python
+import os
+from agent.retry import request_with_retry
+
+GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
+
+async def geocode_place(place_name: str) -> dict:
+    """
+    Convert place name to coordinates using Google Geocoding API.
+    
+    Args:
+        place_name: e.g., "Sofia, Bulgaria" or "Витоша"
+    
+    Returns:
+        {
+            "latitude": 42.6977,
+            "longitude": 23.3219,
+            "formatted_address": "Sofia, Bulgaria",
+            "found": True
+        }
+    """
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_MAPS_API_KEY not configured")
+    
+    params = {
+        "address": place_name,
+        "key": api_key,
+        "language": "bg"  # or "en" for English results
+    }
+    
+    timeout = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10.0"))
+    data = await request_with_retry("GET", GEOCODE_URL, params=params, timeout=timeout)
+    
+    if data.get("status") != "OK" or not data.get("results"):
+        return {
+            "latitude": None,
+            "longitude": None,
+            "formatted_address": None,
+            "found": False,
+            "error": data.get("status", "NO_RESULTS")
+        }
+    
+    result = data["results"][0]
+    location = result["geometry"]["location"]
+    
+    return {
+        "latitude": location["lat"],
+        "longitude": location["lng"],
+        "formatted_address": result["formatted_address"],
+        "found": True
+    }
+```
+
+### 22.3) Add geocode endpoint
+
+**service/schemas.py** — add:
+```python
+class GeocodeRequest(BaseModel):
+    place_name: str = Field(..., description="Place name, e.g., 'Sofia' or 'Витоша'")
+
+class GeocodeResponse(BaseModel):
+    latitude: float | None
+    longitude: float | None
+    formatted_address: str | None
+    found: bool
+```
+
+**service/routes.py** — add:
+```python
+from service.schemas import GeocodeRequest, GeocodeResponse
+from agent.tools.google_geocoding import geocode_place
+
+@router.post("/geocode", response_model=GeocodeResponse, tags=["Geocoding"])
+async def geocode(req: GeocodeRequest):
+    """
+    Convert place name to coordinates.
+    
+    Example: "Sofia, Bulgaria" → { latitude: 42.6977, longitude: 23.3219 }
+    """
+    return await geocode_place(req.place_name)
+```
+
+### 22.4) Enhanced /analyze with place name
+
+**service/schemas.py** — update AnalyzeRequest:
+```python
+class AnalyzeRequest(BaseModel):
+    # Option 1: Direct coordinates
+    latitude: float | None = Field(None, ge=-90, le=90, description="Latitude (-90 to 90)")
+    longitude: float | None = Field(None, ge=-180, le=180, description="Longitude (-180 to 180)")
+    
+    # Option 2: Place name (will be geocoded)
+    place_name: str | None = Field(None, description="Place name, e.g., 'Sofia' or 'Пловдив'")
+    
+    hours: int = Field(default=6, ge=1, le=168, description="Hours to analyze (1-168)")
+    
+    @model_validator(mode='after')
+    def check_location(self):
+        has_coords = self.latitude is not None and self.longitude is not None
+        has_place = self.place_name is not None
+        if not has_coords and not has_place:
+            raise ValueError("Provide either (latitude, longitude) or place_name")
+        return self
+```
+
+**agent/orchestrator.py** — update:
+```python
+async def analyze_air_and_weather(
+    lat: float | None, 
+    lon: float | None, 
+    hours: int,
+    place_name: str | None = None
+):
+    # If place_name provided, geocode it first
+    if place_name and (lat is None or lon is None):
+        geo = await geocode_place(place_name)
+        if not geo["found"]:
+            raise ValueError(f"Could not find location: {place_name}")
+        lat = geo["latitude"]
+        lon = geo["longitude"]
+    
+    validate_lat_lon(lat, lon)
+    # ... rest of the flow
+```
+
+---
+
+## 23) Feature C: Route Weather 🚗
+
+### 23.1) Get Google Directions API
+
+1. Enable "Directions API" in Google Cloud Console
+2. Same API key can be used (or create separate)
+
+### 23.2) Create directions tool
+
+**agent/tools/google_directions.py**
+```python
+import os
+from agent.retry import request_with_retry
+
+DIRECTIONS_URL = "https://maps.googleapis.com/maps/api/directions/json"
+
+async def get_route_waypoints(origin: str, destination: str, num_points: int = 5) -> list[dict]:
+    """
+    Get waypoints along a driving route.
+    
+    Args:
+        origin: Starting point, e.g., "Sofia, Bulgaria"
+        destination: End point, e.g., "Plovdiv, Bulgaria"
+        num_points: Number of waypoints to sample (default 5)
+    
+    Returns:
+        List of waypoints with coordinates and estimated time:
+        [
+            {"lat": 42.6977, "lng": 23.3219, "eta_minutes": 0, "location": "Sofia"},
+            {"lat": 42.4502, "lng": 24.7520, "eta_minutes": 75, "location": "On route"},
+            {"lat": 42.1350, "lng": 24.7453, "eta_minutes": 150, "location": "Plovdiv"}
+        ]
+    """
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_MAPS_API_KEY not configured")
+    
+    params = {
+        "origin": origin,
+        "destination": destination,
+        "mode": "driving",
+        "key": api_key,
+        "language": "bg"
+    }
+    
+    timeout = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10.0"))
+    data = await request_with_retry("GET", DIRECTIONS_URL, params=params, timeout=timeout)
+    
+    if data.get("status") != "OK" or not data.get("routes"):
+        return []
+    
+    route = data["routes"][0]
+    legs = route["legs"][0]
+    steps = legs["steps"]
+    
+    # Sample waypoints evenly along the route
+    waypoints = []
+    total_duration = legs["duration"]["value"]  # seconds
+    
+    # Start point
+    waypoints.append({
+        "lat": legs["start_location"]["lat"],
+        "lng": legs["start_location"]["lng"],
+        "eta_minutes": 0,
+        "location": legs["start_address"]
+    })
+    
+    # Intermediate points
+    accumulated_duration = 0
+    interval = total_duration / (num_points - 1) if num_points > 1 else total_duration
+    
+    for step in steps:
+        accumulated_duration += step["duration"]["value"]
+        # Check if we've passed an interval
+        if accumulated_duration >= interval * len(waypoints) and len(waypoints) < num_points - 1:
+            waypoints.append({
+                "lat": step["end_location"]["lat"],
+                "lng": step["end_location"]["lng"],
+                "eta_minutes": round(accumulated_duration / 60),
+                "location": "On route"
+            })
+    
+    # End point
+    waypoints.append({
+        "lat": legs["end_location"]["lat"],
+        "lng": legs["end_location"]["lng"],
+        "eta_minutes": round(total_duration / 60),
+        "location": legs["end_address"]
+    })
+    
+    return waypoints
+```
+
+### 23.3) Add route weather endpoint
+
+**service/schemas.py** — add:
+```python
+class RouteWeatherRequest(BaseModel):
+    origin: str = Field(..., description="Starting point, e.g., 'Sofia'")
+    destination: str = Field(..., description="End point, e.g., 'Plovdiv'")
+    departure_hours_from_now: int = Field(default=0, ge=0, le=168, 
+        description="When to depart (0 = now)")
+
+class WaypointWeather(BaseModel):
+    location: str
+    eta_minutes: int
+    latitude: float
+    longitude: float
+    temperature: float | None
+    pm25: float | None
+    snowfall: float | None
+    snow_depth: float | None
+    conditions: str  # "Clear", "Snow expected", etc.
+
+class RouteWeatherResponse(BaseModel):
+    origin: str
+    destination: str
+    total_duration_minutes: int
+    waypoints: list[WaypointWeather]
+    summary: str  # AI-generated summary
+    warnings: list[str]  # e.g., ["Heavy snow expected near Plovdiv"]
+```
+
+**service/routes.py** — add:
+```python
+from service.schemas import RouteWeatherRequest, RouteWeatherResponse
+from agent.orchestrator import analyze_route_weather
+
+@router.post("/route-weather", response_model=RouteWeatherResponse, tags=["Route"])
+async def route_weather(req: RouteWeatherRequest):
+    """
+    Get weather forecast along a driving route.
+    
+    Use case: "What's the weather on my trip from Sofia to Plovdiv?"
+    
+    Returns weather conditions at multiple waypoints along the route,
+    with AI-generated summary and warnings.
+    """
+    return await analyze_route_weather(
+        origin=req.origin,
+        destination=req.destination,
+        departure_hours=req.departure_hours_from_now
+    )
+```
+
+### 23.4) Implement route weather orchestrator
+
+**agent/orchestrator.py** — add:
+```python
+from agent.tools.google_directions import get_route_waypoints
+from agent.tools.open_meteo import fetch_weather, fetch_air_quality, fetch_snow
+
+async def analyze_route_weather(origin: str, destination: str, departure_hours: int = 0):
+    """
+    Get weather for each waypoint along a route.
+    """
+    # 1. Get route waypoints
+    waypoints = await get_route_waypoints(origin, destination, num_points=5)
+    if not waypoints:
+        raise ValueError(f"Could not find route from {origin} to {destination}")
+    
+    # 2. Fetch weather for each waypoint (in parallel)
+    import asyncio
+    
+    async def get_waypoint_weather(wp: dict, departure_hours: int):
+        lat, lon = wp["lat"], wp["lng"]
+        # Calculate forecast hour based on ETA
+        forecast_hour = departure_hours + (wp["eta_minutes"] // 60)
+        
+        # Fetch data (just 1 hour for this specific time)
+        wx = await fetch_weather(lat, lon, hours=forecast_hour + 1)
+        air = await fetch_air_quality(lat, lon, hours=forecast_hour + 1)
+        snow = await fetch_snow(lat, lon, hours=forecast_hour + 1)
+        
+        # Extract values at the forecast hour
+        temp = wx.get("hourly", {}).get("temperature_2m", [None])[forecast_hour] if wx else None
+        pm25 = air.get("hourly", {}).get("pm2_5", [None])[forecast_hour] if air else None
+        snowfall = snow.get("hourly", {}).get("snowfall", [None])[forecast_hour] if snow else None
+        snow_depth = snow.get("hourly", {}).get("snow_depth", [None])[forecast_hour] if snow else None
+        
+        # Determine conditions
+        conditions = "Clear"
+        if snowfall and snowfall > 0:
+            conditions = "Snow expected"
+        if snowfall and snowfall > 1:
+            conditions = "Heavy snow"
+        
+        return {
+            "location": wp["location"],
+            "eta_minutes": wp["eta_minutes"],
+            "latitude": lat,
+            "longitude": lon,
+            "temperature": round(temp, 1) if temp else None,
+            "pm25": round(pm25, 1) if pm25 else None,
+            "snowfall": round(snowfall, 1) if snowfall else None,
+            "snow_depth": round(snow_depth, 1) if snow_depth else None,
+            "conditions": conditions
+        }
+    
+    # Fetch all in parallel
+    tasks = [get_waypoint_weather(wp, departure_hours) for wp in waypoints]
+    waypoint_weather = await asyncio.gather(*tasks)
+    
+    # 3. Generate warnings
+    warnings = []
+    for wp in waypoint_weather:
+        if wp["snowfall"] and wp["snowfall"] > 0.5:
+            warnings.append(f"Snow expected near {wp['location']} ({wp['snowfall']} cm)")
+        if wp["temperature"] and wp["temperature"] < 0:
+            warnings.append(f"Below freezing at {wp['location']} ({wp['temperature']}°C)")
+        if wp["pm25"] and wp["pm25"] > 50:
+            warnings.append(f"Poor air quality at {wp['location']} (PM2.5: {wp['pm25']})")
+    
+    # 4. Generate AI summary
+    summary = await generate_route_summary(waypoint_weather, origin, destination)
+    
+    return {
+        "origin": origin,
+        "destination": destination,
+        "total_duration_minutes": waypoints[-1]["eta_minutes"] if waypoints else 0,
+        "waypoints": waypoint_weather,
+        "summary": summary,
+        "warnings": warnings
+    }
+
+async def generate_route_summary(waypoints: list, origin: str, destination: str) -> str:
+    """Generate AI summary for route weather."""
+    # Build context for LLM
+    from agent.tools.github_models_llm import generate_guidance_text
+    from agent.validate import QualityFlags
+    
+    # Simple summary generation (or use LLM)
+    temps = [wp["temperature"] for wp in waypoints if wp["temperature"]]
+    snow_total = sum(wp["snowfall"] or 0 for wp in waypoints)
+    
+    if not temps:
+        return f"Weather data unavailable for route {origin} → {destination}."
+    
+    min_temp = min(temps)
+    max_temp = max(temps)
+    
+    summary = f"Route: {origin} → {destination}. "
+    summary += f"Temperature range: {min_temp}°C to {max_temp}°C. "
+    
+    if snow_total > 0:
+        summary += f"Expected snowfall along route: {snow_total:.1f} cm. Drive carefully! "
+    else:
+        summary += "No snow expected. "
+    
+    if min_temp < 0:
+        summary += "⚠️ Watch for icy roads. "
+    
+    return summary + "\n\nWeather data by Open-Meteo.com"
+```
+
+---
+
+## 24) Update .env.example for Phase 2
+
+**.env.example** — add:
+```env
+# Phase 1 (existing)
+GITHUB_MODELS_TOKEN=replace_me
+GITHUB_MODELS_MODEL=gpt-4o-mini
+NASA_API_KEY=DEMO_KEY
+CACHE_TTL_SECONDS=600
+HTTP_TIMEOUT_SECONDS=10.0
+LLM_TIMEOUT_SECONDS=15.0
+
+# Phase 2 (new)
+GOOGLE_MAPS_API_KEY=replace_me
+```
+
+---
+
+## 25) Update Copilot Studio with new tools
+
+After implementing Phase 2:
+
+1. **Regenerate OpenAPI**
+   ```bash
+   curl -s http://localhost:8000/openapi.json > service/openapi.json
+   ```
+
+2. **Re-import in Copilot Studio**
+   - Delete old tool
+   - Import new `openapi.json`
+   - Configure new endpoints:
+     - `/geocode` - "Use when user mentions a place name"
+     - `/route-weather` - "Use when user asks about trip/route weather"
+
+3. **Update Copilot instructions**
+   ```
+   You are OutdoorMate, an outdoor activity assistant.
+   
+   Available tools:
+   1. analyze - Air quality, weather, snow for a location
+   2. geocode - Convert place name to coordinates
+   3. route-weather - Weather forecast along a driving route
+   
+   When user mentions a place by name (like "Sofia"), use geocode first,
+   then use analyze with the coordinates.
+   
+   When user asks about a trip (A to B), use route-weather.
+   ```
+
+---
+
+## Phase 2 Implementation Order
+
+| Step | Feature | Priority | Dependency |
+|------|---------|----------|------------|
+| 21 | Snow data | High | None |
+| 22 | Geocoding | High | Google API key |
+| 23 | Route weather | Medium | Steps 21, 22 |
+| 24 | Update .env | High | - |
+| 25 | Update Copilot Studio | High | Steps 21-24 |
+
+**Estimated effort**: 4-6 hours total
