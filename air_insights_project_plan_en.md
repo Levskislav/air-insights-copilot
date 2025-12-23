@@ -33,7 +33,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
 |-----|--------|--------|
 | GitHub PAT | github.com/settings/tokens | 🟩 Done |
 | NASA API Key | api.nasa.gov | 🟩 Done (optional) |
-| Google Maps API Key | console.cloud.google.com | ⬜ Needed for Steps 27-29 |
+| Google Maps API Key | console.cloud.google.com | 🟩 Done |
 
 ### Development Environment
 - Python 3.10+ (recommended 3.11)
@@ -271,7 +271,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Depends on**: Step 6
     - **API**: Open-Meteo (free, no key needed)
     - **Output**: `fetch_snow(lat, lon, hours)` returning `snowfall`, `snow_depth` arrays.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: API returns snow data correctly.
 
 28. **Update /analyze for Snow**
@@ -279,7 +279,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Include snow data in analysis and LLM guidance.
     - **Depends on**: Step 27
     - **Output**: Updated `service/schemas.py`, `agent/orchestrator.py`, `agent/prompts/`.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: `/analyze` returns snow data with updated guidance.
 
 ---
@@ -291,7 +291,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Required for converting place names to coordinates.
     - **Depends on**: —
     - **Output**: `GOOGLE_MAPS_API_KEY` in `.env`.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: API key works in test request.
 
 30. **Geocoding Tool**
@@ -299,7 +299,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Convert "София" → `{ lat: 42.6977, lon: 23.3219 }`.
     - **Depends on**: Step 29
     - **Output**: `agent/tools/google_geocoding.py`.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: `geocode_place("Sofia")` returns correct coordinates.
 
 31. **New /geocode Endpoint**
@@ -307,7 +307,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Allow direct geocoding requests from users/Copilot.
     - **Depends on**: Step 30
     - **Output**: `GeocodeRequest`, `GeocodeResponse` schemas + route.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: Swagger shows `/geocode` and it works.
 
 ---
@@ -319,7 +319,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: User can provide either coordinates OR place name.
     - **Depends on**: Step 31
     - **Output**: Updated `AnalyzeRequest` with validation.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: Request accepts `{ place_name: "Витоша", hours: 6 }`.
 
 33. **Auto-Geocode in Orchestrator**
@@ -327,7 +327,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Seamless experience for users who don't know coordinates.
     - **Depends on**: Steps 30, 32
     - **Output**: Updated `agent/orchestrator.py`.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: `/analyze` works with place name input.
 
 ---
@@ -339,7 +339,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Required for getting route waypoints.
     - **Depends on**: Step 29
     - **Output**: Same API key works for Directions.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: Directions API test request succeeds.
 
 35. **Directions Tool**
@@ -347,7 +347,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Get waypoints along driving route A → B with ETAs.
     - **Depends on**: Step 34
     - **Output**: `agent/tools/google_directions.py`.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: Returns 5 waypoints for "Sofia → Plovdiv".
 
 36. **Route Weather Orchestrator**
@@ -355,7 +355,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Fetch weather for each waypoint and generate summary.
     - **Depends on**: Steps 27, 35
     - **Output**: Updated `agent/orchestrator.py` with route logic.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: Returns weather + warnings for each waypoint.
 
 37. **New /route-weather Endpoint**
@@ -363,7 +363,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: User asks "What's the weather Sofia to Plovdiv?"
     - **Depends on**: Step 36
     - **Output**: `RouteWeatherRequest`, `RouteWeatherResponse` schemas + route.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: Swagger shows endpoint and returns waypoint forecasts.
 
 ---
@@ -375,15 +375,15 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Copilot Studio needs updated API definition.
     - **Depends on**: Steps 28, 31, 37
     - **Output**: Updated `service/openapi.json` and `openapi_copilot.json`.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: OpenAPI includes `/geocode`, `/route-weather`, updated `/analyze`.
 
 39. **Update Copilot Studio**
     - **What**: Re-import OpenAPI, add new tools, update instructions.
     - **Why**: Enable Copilot to use all new features.
     - **Depends on**: Step 38
-    - **Output**: 3 new tools in Copilot Studio.
-    - **Status**: ⬜ Not Started
+    - **Output**: 5 tools in Copilot Studio (analyze, geocode, route-weather, apod, health).
+    - **Status**: 🟩 Done
     - **Done when**: All tools work in Copilot chat.
 
 40. **Final Testing & Release**
@@ -391,7 +391,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Ensure a polished, complete handoff.
     - **Depends on**: All previous steps
     - **Output**: Release tag, final checklist.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟨 In Progress
     - **Done when**: All deliverables are present and validated.
 
 ---
@@ -403,12 +403,12 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
 | 1. Foundation | 1-3 | 3/3 | ✅ 100% |
 | 2. Core API | 4-15 | 12/12 | ✅ 100% |
 | 3. Deployment | 16-26 | 5/11 | 🟨 45% |
-| 4. Snow Data | 27-28 | 0/2 | ⬜ 0% |
-| 5. Geocoding | 29-31 | 0/3 | ⬜ 0% |
-| 6. Enhanced Analyze | 32-33 | 0/2 | ⬜ 0% |
-| 7. Route Weather | 34-37 | 0/4 | ⬜ 0% |
-| 8. Final Integration | 38-40 | 0/3 | ⬜ 0% |
-| **TOTAL** | **1-40** | **20/40** | **50%** |
+| 4. Snow Data | 27-28 | 2/2 | ✅ 100% |
+| 5. Geocoding | 29-31 | 3/3 | ✅ 100% |
+| 6. Enhanced Analyze | 32-33 | 2/2 | ✅ 100% |
+| 7. Route Weather | 34-37 | 4/4 | ✅ 100% |
+| 8. Final Integration | 38-40 | 2/3 | 🟨 67% |
+| **TOTAL** | **1-40** | **33/40** | **82.5%** |
 
 ---
 
@@ -456,10 +456,10 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
 | Endpoint | Method | Description | Status |
 |----------|--------|-------------|--------|
 | `/` | GET | Health check | 🟩 Done |
-| `/analyze` | POST | Air + weather + snow + guidance | 🟩 Done (snow pending) |
+| `/analyze` | POST | Air + weather + snow + guidance (supports place names) | 🟩 Done |
 | `/apod/today` | GET | NASA Astronomy Picture of the Day | 🟩 Done |
-| `/geocode` | POST | Place name → coordinates | ⬜ Pending |
-| `/route-weather` | POST | Weather along driving route | ⬜ Pending |
+| `/geocode` | POST | Place name → coordinates | 🟩 Done |
+| `/route-weather` | POST | Full road conditions along driving route | 🟩 Done |
 
 ---
 
@@ -498,9 +498,24 @@ LLM_TIMEOUT_SECONDS=15.0
 |-----------|-------|-------------|--------|
 | **M1: Core API** | 1-15 | ✅ 23 Dec 2024 | 🟩 Done |
 | **M2: Copilot Live** | 21, 23, 25, 26 | ✅ 23 Dec 2024 | 🟩 Done |
-| **M3: Snow Data** | 27-28 | TBD | ⬜ Pending |
-| **M4: Geocoding** | 29-33 | TBD | ⬜ Pending |
-| **M5: Route Weather** | 34-37 | TBD | ⬜ Pending |
-| **M6: v1.0 Release** | 38-40 | TBD | ⬜ Pending |
+| **M3: Snow Data** | 27-28 | ✅ 23 Dec 2024 | 🟩 Done |
+| **M4: Geocoding** | 29-33 | ✅ 23 Dec 2024 | 🟩 Done |
+| **M5: Route Weather** | 34-37 | ✅ 23 Dec 2024 | 🟩 Done |
+| **M6: v1.0 Release** | 38-40 | 🟨 In Progress | 🟨 67% |
+
+---
+
+## What's Left (Steps 17-24)
+
+### Testing & Documentation (Optional but Recommended)
+- **Step 17**: Unit tests (`tests/test_validate.py`, `tests/test_compute.py`)
+- **Step 18**: Integration tests (`tests/test_integration_analyze.py`)
+- **Step 19**: Logging with `request_id`, latencies, errors
+- **Step 20**: Performance benchmark (cached p95 < 2s)
+- **Step 22**: Documentation (`README.md`, runbook)
+- **Step 24**: Screenshots/video demo
+
+### Final Release
+- **Step 40**: End-to-end validation, tag v1.0.0
 
 ---
