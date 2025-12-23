@@ -218,7 +218,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Required for Copilot Studio Tool import.  
     - **Depends on**: Step 5  
     - **Output**: `service/openapi.json` committed (if desired).  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟩 Done  
     - **Done when**: File is generated and validated by Swagger/Copilot.
 
 22. **Docs: README + runbook**  
@@ -234,7 +234,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Speed up Track A integration.  
     - **Depends on**: Step 21  
     - **Output**: `docs/copilot_tool_snippet.md`.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟨 In Progress  
     - **Done when**: Snippet can be used directly in Copilot Studio.
 
 24. **Screenshots for Track B UI/CLI**  
@@ -250,7 +250,7 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
     - **Why**: Enable the assistant to call the API as a Tool.  
     - **Depends on**: Step 21 + Copilot access  
     - **Output**: Copilot Tool configuration.  
-    - **Status**: ⬜ Not Started  
+    - **Status**: 🟨 In Progress  
     - **Done when**: Chat in Copilot successfully invokes the Tool.
 
 26. **Final review and release**  
@@ -267,6 +267,12 @@ Each step shows: **What**, **Why**, **Depends on**, **Output**, **Status**, and 
 - **What**: Implemented `GET /apod/today` endpoint with `agent/tools/nasa_apod.py`
 - **Status**: 🟩 Done
 - **Output**: Returns `{ title, url, explanation }` from NASA APOD API
+
+## 2.2) Deployment: GitHub Codespaces
+- **What**: Configured `.devcontainer/devcontainer.json` for cloud deployment
+- **Status**: 🟩 Done
+- **Public URL**: `https://humble-winner-g7wwrw4rp9rcxvq-8000.app.github.dev`
+- **Output**: API publicly accessible for Copilot Studio integration
 
 ---
 
