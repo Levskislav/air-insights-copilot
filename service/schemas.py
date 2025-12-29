@@ -37,7 +37,7 @@ class AnalyzeRequest(BaseModel):
         
     Example with place name:
         {
-            "place_name": "Витоша",
+            "place_name": "Vitosha",
             "hours": 6
         }
     """
@@ -62,7 +62,7 @@ class AnalyzeRequest(BaseModel):
     # Option 2: Place name (will be geocoded)
     place_name: str | None = Field(
         default=None,
-        description="Place name to geocode (e.g., 'София', 'Vitosha'). Optional if coordinates provided.",
+        description="Place name to geocode (e.g., 'Sofia', 'Vitosha'). Optional if coordinates provided.",
         min_length=1,
         max_length=200
     )
@@ -202,13 +202,13 @@ class GeocodeRequest(BaseModel):
     
     Example:
         {
-            "place_name": "София"
+            "place_name": "Sofia"
         }
     """
     
     place_name: str = Field(
         ...,
-        description="Place name to geocode (e.g., 'София', 'Vitosha', 'Plovdiv, Bulgaria')",
+        description="Place name to geocode (e.g., 'Sofia', 'Vitosha', 'Plovdiv, Bulgaria')",
         min_length=1,
         max_length=200
     )
@@ -276,22 +276,22 @@ class RouteWeatherRequest(BaseModel):
     
     Example:
         {
-            "origin": "София",
-            "destination": "Пловдив",
+            "origin": "Sofia",
+            "destination": "Plovdiv",
             "departure_hours_from_now": 0
         }
     """
     
     origin: str = Field(
         ...,
-        description="Starting point (e.g., 'София', 'Sofia, Bulgaria')",
+        description="Starting point (e.g., 'Sofia', 'Sofia, Bulgaria')",
         min_length=1,
         max_length=200
     )
     
     destination: str = Field(
         ...,
-        description="Destination point (e.g., 'Пловдив', 'Plovdiv, Bulgaria')",
+        description="Destination point (e.g., 'Plovdiv', 'Plovdiv, Bulgaria')",
         min_length=1,
         max_length=200
     )

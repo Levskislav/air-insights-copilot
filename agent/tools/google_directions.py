@@ -37,8 +37,8 @@ async def get_route_waypoints(
     Get waypoints along a driving route from origin to destination.
     
     Args:
-        origin: Starting point (e.g., "София" or "Sofia, Bulgaria")
-        destination: End point (e.g., "Пловдив" or "Plovdiv, Bulgaria")
+        origin: Starting point (e.g., "Sofia" or "Sofia, Bulgaria")
+        destination: End point (e.g., "Plovdiv" or "Plovdiv, Bulgaria")
         num_points: Number of waypoints to sample along the route (default 5)
         
     Returns:

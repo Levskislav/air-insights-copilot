@@ -70,7 +70,7 @@ router = APIRouter()
     **Example with place name:**
     ```json
     {
-        "place_name": "Витоша",
+        "place_name": "Vitosha",
         "hours": 6
     }
     ```
@@ -180,14 +180,14 @@ async def get_apod_today() -> ApodResponse:
     tags=["Geocoding"],
     summary="Convert place name to coordinates",
     description="""
-    Converts a place name (like "София" or "Vitosha") to geographic coordinates.
+    Converts a place name (like "Sofia" or "Vitosha") to geographic coordinates.
     
     Uses Google Maps Geocoding API.
     
     **Example request:**
     ```json
     {
-        "place_name": "София"
+        "place_name": "Sofia"
     }
     ```
     
@@ -253,8 +253,8 @@ async def geocode(request: GeocodeRequest) -> GeocodeResponse:
     **Example request:**
     ```json
     {
-        "origin": "София",
-        "destination": "Пловдив",
+        "origin": "Sofia",
+        "destination": "Plovdiv",
         "departure_hours_from_now": 0
     }
     ```

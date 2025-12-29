@@ -3,7 +3,7 @@ agent/tools/google_geocoding.py
 ===============================
 Google Maps Geocoding API integration.
 
-Converts place names (like "София" or "Vitosha") to coordinates.
+Converts place names (like "Sofia" or "Vitosha") to coordinates.
 
 API Endpoint: https://maps.googleapis.com/maps/api/geocode/json
 Authentication: Google Maps API Key
@@ -33,7 +33,7 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
     Convert a place name to geographic coordinates using Google Geocoding API.
     
     Args:
-        place_name: The place to geocode (e.g., "София", "Vitosha", "Plovdiv, Bulgaria")
+        place_name: The place to geocode (e.g., "Sofia", "Vitosha", "Plovdiv, Bulgaria")
         language: Response language code (default "bg" for Bulgarian)
         
     Returns:
@@ -58,7 +58,7 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
         ValueError: If GOOGLE_MAPS_API_KEY is not configured
         
     Example:
-        >>> result = await geocode_place("София")
+        >>> result = await geocode_place("Sofia")
         >>> print(result)
         {
             "latitude": 42.6977,

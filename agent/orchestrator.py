@@ -65,7 +65,7 @@ async def analyze_air_and_weather(
     Args:
         lat: Latitude coordinate (-90 to 90). Optional if place_name provided.
         lon: Longitude coordinate (-180 to 180). Optional if place_name provided.
-        place_name: Place name to geocode (e.g., "София"). Optional if coords provided.
+        place_name: Place name to geocode (e.g., "Sofia"). Optional if coords provided.
         hours: Number of hours to analyze (1-168)
         
     Returns:
@@ -308,8 +308,8 @@ async def analyze_route_weather(
     3. Generates warnings and summary
     
     Args:
-        origin: Starting point (e.g., "София")
-        destination: End point (e.g., "Пловдив")
+        origin: Starting point (e.g., "Sofia")
+        destination: End point (e.g., "Plovdiv")
         departure_hours: Hours from now when departing (0 = now)
         
     Returns:
