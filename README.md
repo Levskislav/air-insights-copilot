@@ -1,4 +1,4 @@
-# 🏔️ OutdoorMate
+# OutdoorMate
 
 **Intelligent Outdoor Activity Assistant** — AI-powered weather, air quality, and route analysis.
 
@@ -9,59 +9,59 @@
 
 ---
 
-## 🌟 Features
+## Features
 
 | Feature | Description |
 |---------|-------------|
-| 🌡️ **Weather Forecast** | Temperature, rain, visibility, wind, cloud cover |
-| 🌫️ **Air Quality** | PM2.5 and PM10 pollution levels |
-| 🌨️ **Snow Conditions** | Snowfall and snow depth for winter activities |
-| 📍 **Geocoding** | Convert place names to coordinates ("Sofia" → lat/lon) |
-| 🚗 **Route Weather** | Full road conditions along driving route A → B |
-| 🤖 **AI Guidance** | Personalized recommendations via GitHub Models LLM |
+| **Weather Forecast** | Temperature, rain, visibility, wind, cloud cover |
+| **Air Quality** | PM2.5 and PM10 pollution levels |
+| **Snow Conditions** | Snowfall and snow depth for winter activities |
+| **Geocoding** | Convert place names to coordinates ("Sofia" -> lat/lon) |
+| **Route Weather** | Full road conditions along driving route A -> B |
+| **AI Guidance** | Personalized recommendations via GitHub Models LLM |
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    COPILOT STUDIO                           │
-│                   (OutdoorMate Agent)                       │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ OpenAPI 3.0
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     FastAPI Service                         │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────────┐  │
-│  │ /analyze │ │ /geocode │ │  /route  │ │  /apod/today  │  │
-│  │          │ │          │ │ -weather │ │               │  │
-│  └────┬─────┘ └────┬─────┘ └────┬─────┘ └───────────────┘  │
-└───────┼────────────┼────────────┼───────────────────────────┘
-        │            │            │
-        ▼            ▼            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     Agent Orchestrator                      │
-│  ┌────────┐ ┌────────┐ ┌─────────┐ ┌────────┐ ┌─────────┐  │
-│  │Planner │ │Validate│ │ Compute │ │ Cache  │ │   LLM   │  │
-│  └────────┘ └────────┘ └─────────┘ └────────┘ └─────────┘  │
-└───────┬────────────┬────────────┬───────────────────────────┘
-        │            │            │
-        ▼            ▼            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      External APIs                          │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────┐ │
-│  │ Open-Meteo │ │  Google    │ │  GitHub    │ │   NASA   │ │
-│  │  Weather   │ │   Maps     │ │  Models    │ │   APOD   │ │
-│  │ Air Quality│ │ Geocoding  │ │   (LLM)    │ │          │ │
-│  │   Snow     │ │ Directions │ │            │ │          │ │
-│  └────────────┘ └────────────┘ └────────────┘ └──────────┘ │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|                    COPILOT STUDIO                           |
+|                   (OutdoorMate Agent)                       |
++---------------------------+---------------------------------+
+                            | OpenAPI 3.0
+                            v
++-------------------------------------------------------------+
+|                     FastAPI Service                         |
+|  +----------+ +----------+ +----------+ +---------------+   |
+|  | /analyze | | /geocode | |  /route  | |  /apod/today  |   |
+|  |          | |          | | -weather | |               |   |
+|  +----+-----+ +----+-----+ +----+-----+ +---------------+   |
++-------+------------+------------+---------------------------+
+        |            |            |
+        v            v            v
++-------------------------------------------------------------+
+|                     Agent Orchestrator                      |
+|  +--------+ +--------+ +---------+ +--------+ +---------+   |
+|  |Planner | |Validate| | Compute | | Cache  | |   LLM   |   |
+|  +--------+ +--------+ +---------+ +--------+ +---------+   |
++-------+------------+------------+---------------------------+
+        |            |            |
+        v            v            v
++-------------------------------------------------------------+
+|                      External APIs                          |
+|  +------------+ +------------+ +------------+ +----------+  |
+|  | Open-Meteo | |  Google    | |  GitHub    | |   NASA   |  |
+|  |  Weather   | |   Maps     | |  Models    | |   APOD   |  |
+|  | Air Quality| | Geocoding  | |   (LLM)    | |          |  |
+|  |   Snow     | | Directions | |            | |          |  |
+|  +------------+ +------------+ +------------+ +----------+  |
++-------------------------------------------------------------+
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone the repository
 
@@ -115,7 +115,7 @@ Visit: http://localhost:8000/docs
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### POST /analyze
 
@@ -177,7 +177,7 @@ curl http://localhost:8000/apod/today
 
 ---
 
-## 🧪 Testing
+## Testing
 
 Run all tests:
 
@@ -192,7 +192,7 @@ Current test coverage:
 
 ---
 
-## 🤖 Copilot Studio Integration
+## Copilot Studio Integration
 
 1. Deploy API to GitHub Codespaces (public URL)
 2. Export OpenAPI spec: `GET /openapi.json`
@@ -203,7 +203,7 @@ See `docs/copilot_tool_snippet.md` for detailed instructions.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 air_insights/
@@ -229,14 +229,13 @@ air_insights/
 │   ├── test_compute.py
 │   ├── test_validate.py
 │   └── test_integration_analyze.py
-├── .env.example              # Environment template
 ├── requirements.txt          # Dependencies
 └── README.md                 # This file
 ```
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -247,7 +246,7 @@ air_insights/
 
 ---
 
-## 📜 Attribution
+## Attribution
 
 - Weather data by [Open-Meteo.com](https://open-meteo.com/)
 - LLM by [GitHub Models](https://github.com/marketplace/models)
@@ -256,17 +255,12 @@ air_insights/
 
 ---
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
-## 👤 Author
+## Author
 
 **Levskislav** - [GitHub](https://github.com/Levskislav)
-
----
-
-*Built with ❤️ for outdoor enthusiasts*
-

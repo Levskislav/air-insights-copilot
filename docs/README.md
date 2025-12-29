@@ -65,7 +65,7 @@ Response:
   "temp_avg": 15.3,
   "snowfall_sum": 0.0,
   "snow_depth_avg": 5.0,
-  "guidance_text": "Air quality is moderate. PM2.5 is 28.5 μg/m³..."
+  "guidance_text": "Air quality is moderate. PM2.5 is 28.5 ug/m3..."
 }
 ```
 
@@ -87,18 +87,18 @@ Response:
 ### Step 1: Deploy to GitHub Codespaces
 
 1. Open repo in GitHub
-2. Code → Codespaces → Create
+2. Code -> Codespaces -> Create
 3. Run: `uvicorn service.main:app --host 0.0.0.0 --port 8000`
-4. Ports tab → Make port 8000 **Public**
+4. Ports tab -> Make port 8000 **Public**
 5. Copy the public URL
 
 ### Step 2: Create REST API Tool
 
 1. Go to [Copilot Studio](https://copilotstudio.microsoft.com)
-2. Create Agent → Tools → **+ Add a tool**
+2. Create Agent -> Tools -> **+ Add a tool**
 3. Select **REST API**
 4. Upload `service/openapi_simple.json`
-5. Follow wizard: Next → Next → **Publish**
+5. Follow wizard: Next -> Next -> **Publish**
 6. Configure: Set "After running" to **"Write the response with generative AI"**
 
 ### Step 3: Test
@@ -130,10 +130,9 @@ Ask: "What's the weather in Sofia?"
 
 | Requirement | Status |
 |------------|--------|
-| Lat/lon bounds validation | ✅ |
-| Hours range [1..72] | ✅ |
-| Attribution in responses | ✅ |
-| Request logging | ✅ |
-| Retry with backoff | ✅ |
-| 10-minute caching | ✅ |
-
+| Lat/lon bounds validation | Done |
+| Hours range [1..72] | Done |
+| Attribution in responses | Done |
+| Request logging | Done |
+| Retry with backoff | Done |
+| 10-minute caching | Done |
