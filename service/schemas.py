@@ -67,12 +67,11 @@ class AnalyzeRequest(BaseModel):
         max_length=200
     )
     
-    # Hours: how many hours ahead to analyze (1 to 72)
+    # Hours: how many hours ahead to analyze (1 to 72, validated in route)
     hours: int = Field(
         default=1,
         description="Number of hours to forecast ahead (1-72). Use 1 for current weather.",
-        ge=1,
-        le=72
+        ge=1
     )
     
     @model_validator(mode='after')

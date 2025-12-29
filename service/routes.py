@@ -96,6 +96,17 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         HTTPException: If something goes wrong during processing
     """
     try:
+        # Explicit hours validation with user-friendly message
+        if request.hours > 72:
+            return AnalyzeResponse(
+                pm25_avg=None,
+                pm10_avg=None,
+                temp_avg=None,
+                snowfall_sum=None,
+                snow_depth_avg=None,
+                guidance_text=f"Sorry, I can only provide weather forecasts up to 72 hours ahead. You requested {request.hours} hours. Please ask for a shorter time period (up to 3 days)."
+            )
+        
         # Delegate to the orchestrator (agent layer)
         # The orchestrator handles: geocode → cache check → fetch data → validate → compute → LLM
         result = await analyze_air_and_weather(
