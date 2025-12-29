@@ -69,8 +69,8 @@ class AnalyzeRequest(BaseModel):
     
     # Hours: how many hours ahead to analyze (1 to 72)
     hours: int = Field(
-        default=6,
-        description="Number of hours to analyze (1-72)",
+        default=1,
+        description="Number of hours to forecast ahead (1-72). Use 1 for current weather.",
         ge=1,
         le=72
     )

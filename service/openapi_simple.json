@@ -29,8 +29,8 @@
                   },
                   "hours": {
                     "type": "integer",
-                    "description": "Hours to forecast (1-72). Default is 6.",
-                    "default": 6,
+                    "description": "Hours ahead to forecast (1-72). Use 1 for current/now weather. Extract from user message: 'in 20 hours' = 20, 'tomorrow' = 24, 'now' = 1.",
+                    "default": 1,
                     "minimum": 1,
                     "maximum": 72
                   }
