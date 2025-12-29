@@ -29,10 +29,10 @@
                   },
                   "hours": {
                     "type": "integer",
-                    "description": "Hours to forecast (1-168). Default is 6.",
+                    "description": "Hours to forecast (1-72). Default is 6.",
                     "default": 6,
                     "minimum": 1,
-                    "maximum": 168
+                    "maximum": 72
                   }
                 },
                 "required": ["place_name"]

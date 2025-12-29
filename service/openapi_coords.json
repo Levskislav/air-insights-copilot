@@ -33,8 +33,10 @@
                   },
                   "hours": {
                     "type": "integer",
-                    "description": "Forecast hours (default 6)",
-                    "default": 6
+                    "description": "Hours to forecast (1-72). Default is 6.",
+                    "default": 6,
+                    "minimum": 1,
+                    "maximum": 72
                   }
                 },
                 "required": ["latitude", "longitude"]

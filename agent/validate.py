@@ -76,13 +76,13 @@ def validate_hours(hours: int) -> None:
     Validate hours parameter.
     
     Args:
-        hours: Number of hours to forecast (1-168)
+        hours: Number of hours to forecast (1-72)
         
     Raises:
         ValueError: If hours is out of valid range
     """
-    if hours < 1 or hours > 168:
-        raise ValueError(f"Hours {hours} is out of range [1, 168]")
+    if hours < 1 or hours > 72:
+        raise ValueError(f"Hours {hours} is out of range [1, 72]")
 
 
 # =============================================================================

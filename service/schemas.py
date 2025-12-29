@@ -67,12 +67,12 @@ class AnalyzeRequest(BaseModel):
         max_length=200
     )
     
-    # Hours: how many hours ahead to analyze (1 to 168)
+    # Hours: how many hours ahead to analyze (1 to 72)
     hours: int = Field(
         default=6,
-        description="Number of hours to analyze (1-168)",
+        description="Number of hours to analyze (1-72)",
         ge=1,
-        le=168
+        le=72
     )
     
     @model_validator(mode='after')
@@ -301,7 +301,7 @@ class RouteWeatherRequest(BaseModel):
         default=0,
         description="When to depart (0 = now, 1 = in 1 hour, etc.)",
         ge=0,
-        le=168
+        le=72
     )
 
 

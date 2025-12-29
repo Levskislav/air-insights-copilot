@@ -58,7 +58,7 @@ class TestValidateHours:
         validate_hours(1)
         validate_hours(6)
         validate_hours(24)
-        validate_hours(168)
+        validate_hours(72)
     
     def test_invalid_hours_low(self):
         """Hours < 1 should raise ValueError."""
@@ -66,9 +66,9 @@ class TestValidateHours:
             validate_hours(0)
     
     def test_invalid_hours_high(self):
-        """Hours > 168 should raise ValueError."""
+        """Hours > 72 should raise ValueError."""
         with pytest.raises(ValueError, match="Hours"):
-            validate_hours(169)
+            validate_hours(73)
     
     def test_invalid_hours_negative(self):
         """Negative hours should raise ValueError."""
