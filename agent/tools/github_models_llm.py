@@ -139,38 +139,89 @@ def _fallback_guidance(
         Simple guidance text based on thresholds
     """
     parts = []
+    recommendations = []
     
     # Time window info
-    parts.append(f"Guidance for the next {hours} hours.")
+    if hours == 1:
+        parts.append("Current conditions:")
+    else:
+        parts.append(f"Forecast for the next {hours} hours:")
     
     # Data quality warning
     if flags.has_issues():
-        parts.append("⚠️ Note: Some data is incomplete or unavailable.")
+        parts.append("⚠️ Note: Some data is incomplete.")
     
     # PM2.5 assessment (WHO guidelines)
+    air_quality = "unknown"
     if pm25_avg is not None:
         if pm25_avg <= 15:
-            parts.append(f"PM2.5 is {pm25_avg:.1f} μg/m³ (Good).")
+            parts.append(f"Air quality is excellent (PM2.5: {pm25_avg:.1f} μg/m³).")
+            air_quality = "good"
         elif pm25_avg <= 35:
-            parts.append(f"PM2.5 is {pm25_avg:.1f} μg/m³ (Moderate).")
+            parts.append(f"Air quality is moderate (PM2.5: {pm25_avg:.1f} μg/m³).")
+            air_quality = "moderate"
         else:
-            parts.append(f"PM2.5 is {pm25_avg:.1f} μg/m³ (Unhealthy). Consider limiting outdoor activity.")
+            parts.append(f"Air quality is poor (PM2.5: {pm25_avg:.1f} μg/m³).")
+            air_quality = "poor"
     
-    # Temperature info
+    # Temperature assessment
+    temp_category = "mild"
     if temp_avg is not None:
-        parts.append(f"Temperature averages {temp_avg:.1f}°C.")
+        if temp_avg < -5:
+            parts.append(f"Very cold at {temp_avg:.1f}°C - risk of frostbite.")
+            temp_category = "freezing"
+        elif temp_avg < 5:
+            parts.append(f"Cold at {temp_avg:.1f}°C.")
+            temp_category = "cold"
+        elif temp_avg < 15:
+            parts.append(f"Cool at {temp_avg:.1f}°C.")
+            temp_category = "cool"
+        elif temp_avg < 25:
+            parts.append(f"Pleasant {temp_avg:.1f}°C.")
+            temp_category = "pleasant"
+        else:
+            parts.append(f"Hot at {temp_avg:.1f}°C - stay hydrated.")
+            temp_category = "hot"
     
-    # Snow info
+    # Snow assessment
+    has_snow = False
+    good_for_skiing = False
     if snowfall_sum is not None and snowfall_sum > 0:
-        parts.append(f"🌨️ Expected snowfall: {snowfall_sum:.1f} cm.")
+        has_snow = True
+        parts.append(f"🌨️ Snowfall: {snowfall_sum:.1f} cm expected.")
         if snowfall_sum > 5:
-            parts.append("Heavy snow expected - drive carefully!")
+            recommendations.append("Roads may be slippery - drive carefully!")
     
     if snow_depth_avg is not None and snow_depth_avg > 0:
-        parts.append(f"Snow depth: {snow_depth_avg:.1f} cm on the ground.")
+        has_snow = True
+        parts.append(f"Snow on ground: {snow_depth_avg:.1f} cm.")
+        if snow_depth_avg >= 30:
+            good_for_skiing = True
     
-    # General advice
-    parts.append("If you experience any symptoms, stop activity and move indoors.")
+    # Generate context-aware recommendations
+    if good_for_skiing and air_quality in ["good", "moderate"]:
+        recommendations.append("Great conditions for skiing or snowboarding! ⛷️")
+    elif has_snow and temp_category in ["cold", "freezing"]:
+        recommendations.append("Perfect weather for building a snowman or a winter walk. 🏔️")
+    elif air_quality == "good" and temp_category == "pleasant":
+        recommendations.append("Ideal conditions for jogging, cycling, or a picnic! 🚴")
+    elif air_quality == "good" and temp_category in ["cool", "cold"]:
+        recommendations.append("Good for a brisk walk or hiking - dress in layers! 🥾")
+    elif air_quality == "good" and temp_category == "hot":
+        recommendations.append("Best to exercise early morning or evening. Stay hydrated! 💧")
+    elif air_quality == "moderate":
+        recommendations.append("Light outdoor activities are fine. Sensitive individuals should take breaks.")
+    elif air_quality == "poor":
+        recommendations.append("Consider indoor activities today. If outdoors, limit exertion.")
+    elif temp_category == "freezing":
+        recommendations.append("Limit time outdoors. Wear warm layers and protect extremities. 🧤")
+    else:
+        recommendations.append("Check local conditions and plan accordingly. Enjoy your day! 🌤️")
+    
+    parts.extend(recommendations)
+    
+    # Attribution
+    parts.append("Weather data by Open-Meteo.com.")
     
     return " ".join(parts)
 
