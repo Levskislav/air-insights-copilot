@@ -186,7 +186,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Protect core logic from regressions.
     - **Depends on**: Steps 8–9
     - **Output**: `tests/test_validate.py`, `tests/test_compute.py`, etc.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: `pytest` passes locally.
 
 18. **Integration Tests**
@@ -194,7 +194,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: CI‑safe test that doesn't depend on real APIs.
     - **Depends on**: Step 14
     - **Output**: `tests/test_integration_analyze.py`.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: Test passes without making real HTTP calls.
 
 19. **Logging**
@@ -226,7 +226,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Make the project easy to understand and run.
     - **Depends on**: Steps 16–21
     - **Output**: `docs/README.md`, optionally `docs/runbook.md`.
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: A new user can follow docs to run everything locally.
 
 23. **Copilot Tool Snippet**
@@ -242,7 +242,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Visual proof and documentation of behavior.
     - **Depends on**: Step 25
     - **Output**: `screenshots/` folder (or media link).
-    - **Status**: ⬜ Not Started
+    - **Status**: 🟩 Done
     - **Done when**: Screenshots show input + response clearly.
 
 25. **Copilot Studio Integration**
@@ -391,7 +391,7 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
     - **Why**: Ensure a polished, complete handoff.
     - **Depends on**: All previous steps
     - **Output**: Release tag, final checklist.
-    - **Status**: 🟨 In Progress
+    - **Status**: 🟩 Done
     - **Done when**: All deliverables are present and validated.
 
 ---
@@ -402,13 +402,13 @@ This is a **complete step-by-step project plan** for the "OutdoorMate" agent.
 |------|-------|-----------|--------|
 | 1. Foundation | 1-3 | 3/3 | ✅ 100% |
 | 2. Core API | 4-15 | 12/12 | ✅ 100% |
-| 3. Deployment | 16-26 | 5/11 | 🟨 45% |
+| 3. Deployment | 16-26 | 9/11 | ✅ 82% |
 | 4. Snow Data | 27-28 | 2/2 | ✅ 100% |
 | 5. Geocoding | 29-31 | 3/3 | ✅ 100% |
 | 6. Enhanced Analyze | 32-33 | 2/2 | ✅ 100% |
 | 7. Route Weather | 34-37 | 4/4 | ✅ 100% |
-| 8. Final Integration | 38-40 | 2/3 | 🟨 67% |
-| **TOTAL** | **1-40** | **33/40** | **82.5%** |
+| 8. Final Integration | 38-40 | 3/3 | ✅ 100% |
+| **TOTAL** | **1-40** | **38/40** | **95%** |
 
 ---
 
@@ -501,21 +501,21 @@ LLM_TIMEOUT_SECONDS=15.0
 | **M3: Snow Data** | 27-28 | ✅ 23 Dec 2024 | 🟩 Done |
 | **M4: Geocoding** | 29-33 | ✅ 23 Dec 2024 | 🟩 Done |
 | **M5: Route Weather** | 34-37 | ✅ 23 Dec 2024 | 🟩 Done |
-| **M6: v1.0 Release** | 38-40 | 🟨 In Progress | 🟨 67% |
+| **M6: v1.0 Release** | 38-40 | ✅ 29 Dec 2024 | 🟩 Done |
 
 ---
 
-## What's Left (Steps 17-24)
+## What's Left (Optional)
 
-### Testing & Documentation (Optional but Recommended)
-- **Step 17**: Unit tests (`tests/test_validate.py`, `tests/test_compute.py`)
-- **Step 18**: Integration tests (`tests/test_integration_analyze.py`)
+### Nice-to-Have Improvements
 - **Step 19**: Logging with `request_id`, latencies, errors
 - **Step 20**: Performance benchmark (cached p95 < 2s)
-- **Step 22**: Documentation (`README.md`, runbook)
-- **Step 24**: Screenshots/video demo
 
-### Final Release
-- **Step 40**: End-to-end validation, tag v1.0.0
+### ✅ Completed
+- **Step 17**: Unit tests (29 tests) ✅
+- **Step 18**: Integration tests (9 tests) ✅
+- **Step 22**: Documentation (`README.md`) ✅
+- **Step 24**: Screenshots ✅
+- **Step 40**: v1.0.0 Release ✅
 
 ---
