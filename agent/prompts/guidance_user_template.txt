@@ -1,0 +1,19 @@
+Location: latitude {lat}, longitude {lon}
+Time window: next {hours} hours
+
+## Current Data:
+- PM2.5 (fine particles): {pm25} μg/m³
+- PM10 (coarse particles): {pm10} μg/m³
+- Temperature: {temp} °C
+- Expected snowfall: {snowfall_sum} cm
+- Snow depth on ground: {snow_depth_avg} cm
+
+## Data Quality:
+- Air data sparse/missing: {sparse_air}
+- Weather data sparse/missing: {sparse_weather}
+- Missing fields: {missing_fields}
+
+## Question:
+Based on this data, is it a good time for outdoor activities like running, cycling, or winter sports?
+Consider air quality, temperature, and snow conditions.
+Provide specific guidance and any precautions to consider.

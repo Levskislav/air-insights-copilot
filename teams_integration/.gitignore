@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Environment files (contain secrets)
+env/.env.local
+env/.env.local.user
+.localConfigs
+
+# Build outputs
+appPackage/build/
+dist/
+
+# Logs
+*.log
+

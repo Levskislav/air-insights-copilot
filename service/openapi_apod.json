@@ -1,0 +1,49 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NASA APOD API",
+    "description": "Get NASA Astronomy Picture of the Day",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://humble-winner-g7wwrw4rp9rcxvq-8000.app.github.dev"
+    }
+  ],
+  "paths": {
+    "/apod/today": {
+      "get": {
+        "operationId": "getApod",
+        "summary": "Get NASA Astronomy Picture of the Day",
+        "description": "Fetches today's Astronomy Picture of the Day from NASA with title, image URL and scientific explanation.",
+        "responses": {
+          "200": {
+            "description": "APOD data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "description": "Title of the astronomy picture"
+                    },
+                    "url": {
+                      "type": "string",
+                      "description": "URL to the image or video"
+                    },
+                    "explanation": {
+                      "type": "string",
+                      "description": "Scientific explanation of the picture"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

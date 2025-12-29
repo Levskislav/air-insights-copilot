@@ -1,0 +1,143 @@
+{
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "🌤️",
+                  "size": "ExtraLarge"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "OutdoorMate",
+                  "weight": "Bolder",
+                  "size": "Medium"
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "Weather & Air Quality",
+                  "spacing": "None",
+                  "isSubtle": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "📍 ${location}",
+          "weight": "Bolder",
+          "size": "Large",
+          "spacing": "Medium"
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "1",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "🌡️ Temperature",
+                  "isSubtle": true,
+                  "size": "Small"
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${temperature}°C",
+                  "weight": "Bolder",
+                  "size": "ExtraLarge",
+                  "color": "Accent"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "1",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "💨 Air Quality",
+                  "isSubtle": true,
+                  "size": "Small"
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "${airQualityStatus}",
+                  "weight": "Bolder",
+                  "size": "Medium"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "FactSet",
+          "facts": [
+            {
+              "title": "PM2.5",
+              "value": "${pm25} μg/m³"
+            },
+            {
+              "title": "PM10",
+              "value": "${pm10} μg/m³"
+            },
+            {
+              "title": "❄️ Snow Depth",
+              "value": "${snowDepth} cm"
+            },
+            {
+              "title": "🌨️ Snowfall",
+              "value": "${snowfall} cm"
+            }
+          ],
+          "spacing": "Medium"
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "style": "good",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "🤖 AI Guidance",
+          "weight": "Bolder",
+          "spacing": "Small"
+        },
+        {
+          "type": "TextBlock",
+          "text": "${guidance}",
+          "wrap": true
+        }
+      ],
+      "spacing": "Medium"
+    }
+  ]
+}
+
+

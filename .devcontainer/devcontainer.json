@@ -1,0 +1,41 @@
+{
+    "name": "Air & Insights Copilot",
+    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    
+    "features": {
+        "ghcr.io/devcontainers/features/python:1": {
+            "version": "3.11"
+        }
+    },
+    
+    "postCreateCommand": "pip install -r requirements.txt && cp .env.example .env",
+    
+    "forwardPorts": [8000],
+    
+    "portsAttributes": {
+        "8000": {
+            "label": "Air Insights API",
+            "onAutoForward": "notify",
+            "visibility": "public"
+        }
+    },
+    
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python"
+            }
+        }
+    },
+    
+    "remoteEnv": {
+        "GITHUB_MODELS_TOKEN": "${localEnv:GITHUB_MODELS_TOKEN}",
+        "GOOGLE_MAPS_API_KEY": "${localEnv:GOOGLE_MAPS_API_KEY}",
+        "NASA_API_KEY": "${localEnv:NASA_API_KEY}"
+    }
+}
+
