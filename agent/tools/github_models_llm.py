@@ -14,10 +14,15 @@ If LLM fails (timeout, rate limit, etc.), we return a rule-based fallback.
 
 import os
 from pathlib import Path
-from typing import Any
 
 from agent.retry import request_with_retry
 from agent.validate import QualityFlags
+from agent.logging_config import log_debug, log_warning
+from agent.config import (
+    PM25_GOOD_THRESHOLD, PM25_MODERATE_THRESHOLD,
+    TEMP_FREEZING, TEMP_COLD, TEMP_COOL, TEMP_HOT,
+    DEFAULT_LLM_TIMEOUT_SECONDS
+)
 
 # =============================================================================
 # CONFIGURATION
@@ -154,10 +159,10 @@ def _fallback_guidance(
     # PM2.5 assessment (WHO guidelines)
     air_quality = "unknown"
     if pm25_avg is not None:
-        if pm25_avg <= 15:
+        if pm25_avg <= PM25_GOOD_THRESHOLD:
             parts.append(f"Air quality is excellent (PM2.5: {pm25_avg:.1f} μg/m³).")
             air_quality = "good"
-        elif pm25_avg <= 35:
+        elif pm25_avg <= PM25_MODERATE_THRESHOLD:
             parts.append(f"Air quality is moderate (PM2.5: {pm25_avg:.1f} μg/m³).")
             air_quality = "moderate"
         else:
@@ -167,16 +172,16 @@ def _fallback_guidance(
     # Temperature assessment
     temp_category = "mild"
     if temp_avg is not None:
-        if temp_avg < -5:
+        if temp_avg < TEMP_FREEZING:
             parts.append(f"Very cold at {temp_avg:.1f}°C - risk of frostbite.")
             temp_category = "freezing"
-        elif temp_avg < 5:
+        elif temp_avg < TEMP_COLD:
             parts.append(f"Cold at {temp_avg:.1f}°C.")
             temp_category = "cold"
-        elif temp_avg < 15:
+        elif temp_avg < TEMP_COOL:
             parts.append(f"Cool at {temp_avg:.1f}°C.")
             temp_category = "cool"
-        elif temp_avg < 25:
+        elif temp_avg < TEMP_HOT:
             parts.append(f"Pleasant {temp_avg:.1f}°C.")
             temp_category = "pleasant"
         else:
@@ -271,11 +276,11 @@ async def generate_guidance_text(
     # Get configuration from environment
     token = os.getenv("GITHUB_MODELS_TOKEN")
     model = os.getenv("GITHUB_MODELS_MODEL", "gpt-4o-mini")
-    timeout = float(os.getenv("LLM_TIMEOUT_SECONDS", "15.0"))
+    timeout = float(os.getenv("LLM_TIMEOUT_SECONDS", str(DEFAULT_LLM_TIMEOUT_SECONDS)))
     
     # If no token configured, use fallback immediately
     if not token or token == "replace_me_with_your_github_pat":
-        print("[llm] No GitHub token configured, using fallback guidance")
+        log_warning("No GitHub token configured, using fallback guidance")
         return _fallback_guidance(pm25_avg, pm10_avg, temp_avg, snowfall_sum, snow_depth_avg, hours, flags)
     
     try:
@@ -298,7 +303,7 @@ async def generate_guidance_text(
             "max_tokens": 300   # Limit response length
         }
         
-        print(f"[llm] Calling GitHub Models ({model})...")
+        log_debug(f"Calling GitHub Models", model=model)
         
         # Make the API call with retry support
         response = await request_with_retry(
@@ -311,12 +316,11 @@ async def generate_guidance_text(
         
         # Extract the generated text from response
         guidance = response["choices"][0]["message"]["content"]
-        print(f"[llm] Successfully generated guidance ({len(guidance)} chars)")
+        log_debug(f"LLM guidance generated", chars=len(guidance))
         
         return guidance.strip()
         
     except Exception as e:
         # LLM failed - log error and use fallback
-        print(f"[llm] Error calling GitHub Models: {e}")
-        print("[llm] Using fallback guidance")
+        log_warning(f"GitHub Models error, using fallback", error=str(e))
         return _fallback_guidance(pm25_avg, pm10_avg, temp_avg, snowfall_sum, snow_depth_avg, hours, flags)

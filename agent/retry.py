@@ -27,24 +27,21 @@ import asyncio
 import httpx
 from typing import Any
 
+from agent.logging_config import logger
+from agent.config import DEFAULT_HTTP_TIMEOUT_SECONDS
+
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
 
 # HTTP status codes that should trigger a retry
-# 429 = Rate limited (too many requests)
-# 500 = Internal server error
-# 502 = Bad gateway
-# 503 = Service unavailable
-# 504 = Gateway timeout
-RETRY_STATUS_CODES = {429, 500, 502, 503, 504}
+RETRY_STATUS_CODES: set[int] = {429, 500, 502, 503, 504}
 
 # Delays between retries (exponential backoff)
-# First retry after 0.2s, second after 0.5s, third after 1.2s
-RETRY_DELAYS = [0.2, 0.5, 1.2]
+RETRY_DELAYS: list[float] = [0.2, 0.5, 1.2]
 
-# Default timeout for HTTP requests (seconds)
-DEFAULT_TIMEOUT = 10.0
+# Default timeout for HTTP requests
+DEFAULT_TIMEOUT: float = DEFAULT_HTTP_TIMEOUT_SECONDS
 
 
 # =============================================================================
@@ -107,8 +104,7 @@ async def request_with_retry(
                 
                 # Check if we got a retryable status code
                 if response.status_code in RETRY_STATUS_CODES:
-                    # Log the retry (in production, use proper logging)
-                    print(f"[retry] Attempt {attempt + 1}: Got {response.status_code}, will retry...")
+                    logger.warning(f"Attempt {attempt + 1}: Got {response.status_code}, will retry...")
                     raise RuntimeError(f"Retryable HTTP status: {response.status_code}")
                 
                 # Raise exception for other error status codes (4xx except 429)
@@ -126,11 +122,11 @@ async def request_with_retry(
             if attempt < len(RETRY_DELAYS):
                 # Wait before retrying (exponential backoff)
                 delay = RETRY_DELAYS[attempt]
-                print(f"[retry] Attempt {attempt + 1} failed: {e}. Retrying in {delay}s...")
+                logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay}s...")
                 await asyncio.sleep(delay)
             else:
                 # No more retries - give up and raise the last error
-                print(f"[retry] All {total_attempts} attempts failed. Giving up.")
+                logger.error(f"All {total_attempts} attempts failed. Giving up.")
                 raise last_error
 
 

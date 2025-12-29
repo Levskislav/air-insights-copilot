@@ -20,17 +20,15 @@ from typing import Any
 
 from cachetools import TTLCache
 
+from agent.logging_config import log_debug
+from agent.config import DEFAULT_CACHE_TTL_SECONDS, DEFAULT_CACHE_MAX_SIZE, COORDINATE_PRECISION
+
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
 
-# Get TTL from environment variable, default to 600 seconds (10 minutes)
-# This allows easy configuration without code changes
-CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "600"))
-
-# Maximum number of cached entries
-# Prevents memory issues if many different locations are requested
-CACHE_MAX_SIZE = 1024
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", str(DEFAULT_CACHE_TTL_SECONDS)))
+CACHE_MAX_SIZE = int(os.getenv("CACHE_MAX_SIZE", str(DEFAULT_CACHE_MAX_SIZE)))
 
 # =============================================================================
 # CREATE THE CACHE
@@ -72,10 +70,9 @@ def cache_key(lat: float, lon: float, hours: int) -> str:
         >>> cache_key(42.697712, 23.321899, 6)
         "42.6977:23.3219:6"
     """
-    # Round to 4 decimal places (~11 meter precision)
-    # This is accurate enough for weather data while reducing cache misses
-    rounded_lat = round(lat, 4)
-    rounded_lon = round(lon, 4)
+    # Round coordinates to prevent cache fragmentation
+    rounded_lat = round(lat, COORDINATE_PRECISION)
+    rounded_lon = round(lon, COORDINATE_PRECISION)
     
     return f"{rounded_lat}:{rounded_lon}:{hours}"
 
@@ -100,15 +97,7 @@ def cache_get(key: str) -> Any | None:
         >>> if result is not None:
         ...     print("Cache hit!")
     """
-    result = _cache.get(key)
-    
-    # Log cache hit/miss for debugging
-    if result is not None:
-        print(f"[cache] HIT: {key}")
-    else:
-        print(f"[cache] MISS: {key}")
-    
-    return result
+    return _cache.get(key)
 
 
 def cache_set(key: str, value: Any) -> None:
@@ -126,7 +115,7 @@ def cache_set(key: str, value: Any) -> None:
         >>> cache_set(key, {"pm25_avg": 12.5, "guidance_text": "..."})
     """
     _cache[key] = value
-    print(f"[cache] SET: {key} (TTL: {CACHE_TTL_SECONDS}s)")
+    log_debug(f"Cache SET", key=key[:40], ttl=CACHE_TTL_SECONDS)
 
 
 def cache_clear() -> None:
@@ -136,7 +125,7 @@ def cache_clear() -> None:
     Useful for testing or when you need fresh data.
     """
     _cache.clear()
-    print("[cache] CLEARED all entries")
+    log_debug("Cache cleared")
 
 
 def cache_stats() -> dict:

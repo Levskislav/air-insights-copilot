@@ -15,6 +15,9 @@ import os
 from typing import Any
 
 from agent.retry import request_with_retry
+from agent.logging_config import log_debug, log_warning
+from agent.exceptions import GeocodingError, ConfigurationError
+from agent.config import DEFAULT_HTTP_TIMEOUT_SECONDS
 
 # =============================================================================
 # CONFIGURATION
@@ -72,12 +75,9 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
     api_key = os.getenv("GOOGLE_MAPS_API_KEY")
     
     if not api_key or api_key == "replace_me":
-        raise ValueError(
-            "GOOGLE_MAPS_API_KEY not configured. "
-            "Add it to your .env file."
-        )
+        raise ConfigurationError("GOOGLE_MAPS_API_KEY")
     
-    print(f"[geocoding] Looking up: '{place_name}'...")
+    log_debug(f"Geocoding lookup", place=place_name)
     
     # Build query parameters
     params = {
@@ -86,8 +86,7 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
         "language": language  # Response language
     }
     
-    # Get timeout from environment
-    timeout = float(os.getenv("HTTP_TIMEOUT_SECONDS", "10.0"))
+    timeout = float(os.getenv("HTTP_TIMEOUT_SECONDS", str(DEFAULT_HTTP_TIMEOUT_SECONDS)))
     
     try:
         # Make the API call
@@ -102,8 +101,7 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
         status = response.get("status", "UNKNOWN_ERROR")
         
         if status != "OK":
-            # No results or error
-            print(f"[geocoding] Status: {status}")
+            log_warning(f"Geocoding failed", place=place_name, status=status)
             return {
                 "latitude": None,
                 "longitude": None,
@@ -116,7 +114,7 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
         results = response.get("results", [])
         
         if not results:
-            print("[geocoding] No results found")
+            log_warning(f"Geocoding: no results", place=place_name)
             return {
                 "latitude": None,
                 "longitude": None,
@@ -130,8 +128,8 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
         location = first_result["geometry"]["location"]
         formatted_address = first_result.get("formatted_address", place_name)
         
-        print(f"[geocoding] Found: {formatted_address}")
-        print(f"[geocoding] Coordinates: ({location['lat']}, {location['lng']})")
+        log_debug(f"Geocoded successfully", address=formatted_address, 
+                  lat=location['lat'], lon=location['lng'])
         
         return {
             "latitude": location["lat"],
@@ -141,7 +139,7 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
         }
         
     except Exception as e:
-        print(f"[geocoding] Error: {e}")
+        log_warning(f"Geocoding error", place=place_name, error=str(e))
         return {
             "latitude": None,
             "longitude": None,
@@ -186,10 +184,7 @@ async def geocode_if_needed(
         result = await geocode_place(place_name)
         
         if not result["found"]:
-            raise ValueError(
-                f"Could not find location: '{place_name}'. "
-                f"Error: {result.get('error', 'Unknown')}"
-            )
+            raise GeocodingError(place_name, result.get("error", "Unknown"))
         
         return result["latitude"], result["longitude"], result["formatted_address"]
     

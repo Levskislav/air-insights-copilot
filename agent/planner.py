@@ -17,6 +17,8 @@ In the future, this could be:
 
 from dataclasses import dataclass
 
+from agent.logging_config import log_debug
+
 
 # =============================================================================
 # PLAN DATA STRUCTURES
@@ -83,16 +85,12 @@ def plan_for_analyze(lat: float, lon: float, hours: int) -> AnalyzePlan:
     plan = AnalyzePlan(
         need_air=True,
         need_weather=True,
-        # Standard variables for air quality
         air_variables=["pm2_5", "pm10"],
-        # Standard variables for weather
         weather_variables=["temperature_2m"]
     )
     
-    # Log the plan for debugging
-    print(f"[planner] Created plan for ({lat}, {lon}, {hours}h):")
-    print(f"[planner]   - Air quality: {plan.need_air} ({plan.air_variables})")
-    print(f"[planner]   - Weather: {plan.need_weather} ({plan.weather_variables})")
+    log_debug("Execution plan created", lat=lat, lon=lon, hours=hours,
+              need_air=plan.need_air, need_weather=plan.need_weather)
     
     return plan
 

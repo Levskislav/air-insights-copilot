@@ -13,21 +13,23 @@ Endpoints:
 - GET  /apod/today → NASA Astronomy Picture of the Day (optional)
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
-# Import our Pydantic models for request/response validation
+from agent.config import config, MAX_FORECAST_HOURS
+from agent.logging_config import log_error
+from agent.exceptions import AirInsightsError, GeocodingError, ConfigurationError
+from agent.orchestrator import analyze_air_and_weather, apod_today
+from agent.tools.google_geocoding import geocode_place
 from service.schemas import (
     AnalyzeRequest, AnalyzeResponse, 
     ApodResponse,
-    GeocodeRequest, GeocodeResponse,
-    RouteWeatherRequest, RouteWeatherResponse
+    GeocodeRequest, GeocodeResponse
 )
 
-# Import the agent orchestrator (business logic)
-from agent.orchestrator import analyze_air_and_weather, apod_today, analyze_route_weather
-
-# Import geocoding tool
-from agent.tools.google_geocoding import geocode_place
+# Rate limiter instance - shared with main.py via app.state
+limiter = Limiter(key_func=get_remote_address, default_limits=[f"{config.rate_limit_per_minute}/minute"])
 
 # =============================================================================
 # CREATE THE ROUTER
@@ -58,6 +60,8 @@ router = APIRouter()
     - AI guidance generated via GitHub Models LLM
     - Results cached for 10 minutes
     
+    **Rate limit:** 30 requests per minute
+    
     **Example with coordinates:**
     ```json
     {
@@ -76,7 +80,8 @@ router = APIRouter()
     ```
     """
 )
-async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
+@limiter.limit("30/minute")
+async def analyze(request: Request, body: AnalyzeRequest) -> AnalyzeResponse:
     """
     Main analysis endpoint.
     
@@ -97,38 +102,38 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     """
     try:
         # Explicit hours validation with user-friendly message
-        if request.hours > 72:
+        if body.hours > MAX_FORECAST_HOURS:
             return AnalyzeResponse(
                 pm25_avg=None,
                 pm10_avg=None,
                 temp_avg=None,
                 snowfall_sum=None,
                 snow_depth_avg=None,
-                guidance_text=f"Sorry, I can only provide weather forecasts up to 72 hours ahead. You requested {request.hours} hours. Please ask for a shorter time period (up to 3 days)."
+                guidance_text=f"Sorry, I can only provide weather forecasts up to {MAX_FORECAST_HOURS} hours ahead. You requested {body.hours} hours. Please try a shorter time period."
             )
         
         # Delegate to the orchestrator (agent layer)
         # The orchestrator handles: geocode → cache check → fetch data → validate → compute → LLM
         result = await analyze_air_and_weather(
-            lat=request.latitude,
-            lon=request.longitude,
-            place_name=request.place_name,
-            hours=request.hours
+            lat=body.latitude,
+            lon=body.longitude,
+            place_name=body.place_name,
+            hours=body.hours
         )
         return result
         
+    except AirInsightsError as e:
+        # Our custom exceptions - preserve status code and message
+        raise HTTPException(status_code=e.status_code, detail=e.message)
+        
     except ValueError as e:
-        # Validation errors (e.g., invalid coordinates)
+        # Validation errors
         raise HTTPException(status_code=400, detail=str(e))
         
     except Exception as e:
         # Unexpected errors - log and return generic message
-        # In production, you'd log this properly
-        print(f"Error in /analyze: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="An error occurred while processing your request"
-        )
+        log_error(f"Error in /analyze", error=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # =============================================================================
@@ -145,9 +150,12 @@ async def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
     
     This is a bonus feature that demonstrates calling external APIs.
     Uses NASA's free APOD API (DEMO_KEY or your own API key).
+    
+    **Rate limit:** 30 requests per minute
     """
 )
-async def get_apod_today() -> ApodResponse:
+@limiter.limit("30/minute")
+async def get_apod_today(request: Request) -> ApodResponse:
     """
     Fetch NASA's Astronomy Picture of the Day.
     
@@ -162,12 +170,12 @@ async def get_apod_today() -> ApodResponse:
         result = await apod_today()
         return result
         
+    except AirInsightsError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
+        
     except Exception as e:
-        print(f"Error in /apod/today: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to fetch APOD from NASA"
-        )
+        log_error(f"Error in /apod/today", error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to fetch APOD")
 
 
 # =============================================================================
@@ -183,6 +191,8 @@ async def get_apod_today() -> ApodResponse:
     Converts a place name (like "Sofia" or "Vitosha") to geographic coordinates.
     
     Uses Google Maps Geocoding API.
+    
+    **Rate limit:** 60 requests per minute
     
     **Example request:**
     ```json
@@ -202,7 +212,8 @@ async def get_apod_today() -> ApodResponse:
     ```
     """
 )
-async def geocode(request: GeocodeRequest) -> GeocodeResponse:
+@limiter.limit("60/minute")
+async def geocode(request: Request, body: GeocodeRequest) -> GeocodeResponse:
     """
     Geocode a place name to coordinates.
     
@@ -216,83 +227,15 @@ async def geocode(request: GeocodeRequest) -> GeocodeResponse:
         HTTPException: If geocoding service fails
     """
     try:
-        # Call the geocoding tool
-        result = await geocode_place(request.place_name)
+        result = await geocode_place(body.place_name)
         return result
         
-    except ValueError as e:
-        # Configuration error (no API key)
-        raise HTTPException(status_code=500, detail=str(e))
+    except ConfigurationError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
+        
+    except AirInsightsError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.message)
         
     except Exception as e:
-        print(f"Error in /geocode: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to geocode place name"
-        )
-
-
-# =============================================================================
-# ROUTE WEATHER ENDPOINT: POST /route-weather
-# =============================================================================
-
-@router.post(
-    "/route-weather",
-    response_model=RouteWeatherResponse,
-    tags=["Route"],
-    summary="Get weather along a driving route",
-    description="""
-    Gets weather forecast at multiple waypoints along a driving route.
-    
-    Perfect for planning road trips! Shows:
-    - Temperature at each waypoint
-    - Air quality (PM2.5)
-    - Snow conditions
-    - Weather warnings
-    
-    **Example request:**
-    ```json
-    {
-        "origin": "Sofia",
-        "destination": "Plovdiv",
-        "departure_hours_from_now": 0
-    }
-    ```
-    
-    **Response includes:**
-    - Route distance and duration
-    - Weather at 5 waypoints along the route
-    - AI-generated summary
-    - Warnings (ice, snow, air quality)
-    """
-)
-async def route_weather(request: RouteWeatherRequest) -> RouteWeatherResponse:
-    """
-    Get weather forecast along a driving route.
-    
-    Args:
-        request: RouteWeatherRequest with origin, destination, and departure time
-        
-    Returns:
-        RouteWeatherResponse with waypoints, summary, and warnings
-        
-    Raises:
-        HTTPException: If route not found or service fails
-    """
-    try:
-        result = await analyze_route_weather(
-            origin=request.origin,
-            destination=request.destination,
-            departure_hours=request.departure_hours_from_now
-        )
-        return result
-        
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-        
-    except Exception as e:
-        print(f"Error in /route-weather: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Failed to get route weather"
-        )
+        log_error(f"Error in /geocode", error=str(e))
+        raise HTTPException(status_code=500, detail="Geocoding service unavailable")

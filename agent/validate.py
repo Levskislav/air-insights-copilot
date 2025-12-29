@@ -15,6 +15,8 @@ uncertainty in its guidance when data is incomplete.
 from dataclasses import dataclass, field
 from typing import Any
 
+from agent.config import MAX_FORECAST_HOURS, MIN_FORECAST_HOURS
+
 
 # =============================================================================
 # DATA QUALITY FLAGS
@@ -76,13 +78,13 @@ def validate_hours(hours: int) -> None:
     Validate hours parameter.
     
     Args:
-        hours: Number of hours to forecast (1-72)
+        hours: Number of hours to forecast
         
     Raises:
         ValueError: If hours is out of valid range
     """
-    if hours < 1 or hours > 72:
-        raise ValueError(f"Hours {hours} is out of range [1, 72]")
+    if hours < MIN_FORECAST_HOURS or hours > MAX_FORECAST_HOURS:
+        raise ValueError(f"Hours {hours} is out of range [{MIN_FORECAST_HOURS}, {MAX_FORECAST_HOURS}]")
 
 
 # =============================================================================

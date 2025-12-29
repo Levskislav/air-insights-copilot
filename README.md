@@ -17,7 +17,6 @@
 | **Air Quality** | PM2.5 and PM10 pollution levels |
 | **Snow Conditions** | Snowfall and snow depth for winter activities |
 | **Geocoding** | Convert place names to coordinates ("Sofia" -> lat/lon) |
-| **Route Weather** | Full road conditions along driving route A -> B |
 | **AI Guidance** | Personalized recommendations via GitHub Models LLM |
 
 ---
@@ -157,16 +156,6 @@ curl -X POST http://localhost:8000/geocode \
   -d '{"place_name": "Vitosha mountain"}'
 ```
 
-### POST /route-weather
-
-Get weather conditions along a driving route.
-
-```bash
-curl -X POST http://localhost:8000/route-weather \
-  -H "Content-Type: application/json" \
-  -d '{"origin": "Sofia", "destination": "Plovdiv"}'
-```
-
 ### GET /apod/today
 
 Get NASA Astronomy Picture of the Day.
@@ -218,7 +207,6 @@ air_insights/
 │   └── tools/                # External API integrations
 │       ├── open_meteo.py     # Weather & air quality
 │       ├── google_geocoding.py
-│       ├── google_directions.py
 │       ├── github_models_llm.py
 │       └── nasa_apod.py
 ├── service/                  # FastAPI application

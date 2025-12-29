@@ -1,55 +1,72 @@
 """
 agent/logging_config.py
 =======================
-Structured logging configuration for OutdoorMate.
+Structured logging configuration for Air & Insights Copilot.
 
 Features:
-- Request ID tracking
-- Latency measurement
-- Colored console output
-- JSON format for production
+- JSON logs for production (LOG_FORMAT=json)
+- Colored console logs for development
+- Configurable log level via LOG_LEVEL env var
+- Helper functions for structured logging
 """
 
 import logging
 import sys
-import time
-import uuid
-from contextvars import ContextVar
-from functools import wraps
-from typing import Any, Callable
-
-# =============================================================================
-# CONTEXT VARIABLES
-# =============================================================================
-
-# Request ID for tracking across async calls
-request_id_var: ContextVar[str] = ContextVar("request_id", default="no-request")
+import json
+import os
+from datetime import datetime, timezone
+from typing import Any
 
 
 # =============================================================================
-# CUSTOM FORMATTER
+# CONFIGURATION
 # =============================================================================
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_FORMAT = os.getenv("LOG_FORMAT", "text")  # "json" for production
+
+
+# =============================================================================
+# FORMATTERS
+# =============================================================================
+
+class JsonFormatter(logging.Formatter):
+    """JSON formatter for structured logging in production."""
+    
+    def format(self, record: logging.LogRecord) -> str:
+        log_data = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        
+        # Add extra fields if present
+        if hasattr(record, "extra"):
+            log_data.update(record.extra)
+            
+        # Add exception info
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+            
+        return json.dumps(log_data, ensure_ascii=False)
+
 
 class ColoredFormatter(logging.Formatter):
-    """Formatter with colors for console output."""
+    """Colored formatter for readable console output."""
     
     COLORS = {
         "DEBUG": "\033[36m",     # Cyan
-        "INFO": "\033[32m",      # Green
+        "INFO": "\033[32m",      # Green  
         "WARNING": "\033[33m",   # Yellow
         "ERROR": "\033[31m",     # Red
-        "CRITICAL": "\033[35m",  # Magenta
+        "CRITICAL": "\033[41m",  # Red background
     }
     RESET = "\033[0m"
     
     def format(self, record: logging.LogRecord) -> str:
-        # Add request_id to record
-        record.request_id = request_id_var.get()
-        
-        # Add color
         color = self.COLORS.get(record.levelname, "")
-        record.levelname_colored = f"{color}{record.levelname}{self.RESET}"
-        
+        record.levelname = f"{color}{record.levelname:8}{self.RESET}"
         return super().format(record)
 
 
@@ -57,131 +74,98 @@ class ColoredFormatter(logging.Formatter):
 # LOGGER SETUP
 # =============================================================================
 
-def setup_logging(level: str = "INFO") -> logging.Logger:
+def get_logger(name: str = "air_insights") -> logging.Logger:
     """
-    Configure and return the main application logger.
+    Get or create a configured logger.
     
     Args:
-        level: Logging level (DEBUG, INFO, WARNING, ERROR)
+        name: Logger name (default: "air_insights")
         
     Returns:
         Configured logger instance
     """
-    logger = logging.getLogger("outdoormate")
-    logger.setLevel(getattr(logging, level.upper()))
+    logger = logging.getLogger(name)
     
-    # Remove existing handlers
-    logger.handlers.clear()
-    
-    # Console handler with colors
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG)
-    
-    # Format: [LEVEL] [request_id] message
-    formatter = ColoredFormatter(
-        fmt="%(levelname_colored)s [%(request_id)s] %(message)s",
-        datefmt="%H:%M:%S"
-    )
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
+    # Only configure if not already done
+    if not logger.handlers:
+        logger.setLevel(getattr(logging, LOG_LEVEL))
+        
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(getattr(logging, LOG_LEVEL))
+        
+        if LOG_FORMAT == "json":
+            handler.setFormatter(JsonFormatter())
+        else:
+            # Use ASCII-safe separator for Windows compatibility
+            handler.setFormatter(ColoredFormatter(
+                fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+                datefmt="%H:%M:%S"
+            ))
+        
+        logger.addHandler(handler)
+        logger.propagate = False
     
     return logger
 
 
-# Global logger instance
-logger = setup_logging()
+# Create default logger
+logger = get_logger()
 
 
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
 
-def generate_request_id() -> str:
-    """Generate a unique request ID."""
-    return str(uuid.uuid4())[:8]
-
-
-def set_request_id(request_id: str | None = None) -> str:
-    """Set the request ID for the current context."""
-    rid = request_id or generate_request_id()
-    request_id_var.set(rid)
-    return rid
-
-
-def get_request_id() -> str:
-    """Get the current request ID."""
-    return request_id_var.get()
-
-
-# =============================================================================
-# TIMING DECORATOR
-# =============================================================================
-
-def log_timing(operation: str) -> Callable:
-    """
-    Decorator to log execution time of async functions.
-    
-    Args:
-        operation: Name of the operation being timed
-        
-    Example:
-        @log_timing("fetch_weather")
-        async def fetch_weather(...):
-            ...
-    """
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def wrapper(*args, **kwargs) -> Any:
-            start = time.perf_counter()
-            try:
-                result = await func(*args, **kwargs)
-                elapsed = (time.perf_counter() - start) * 1000
-                logger.info(f"{operation} completed in {elapsed:.1f}ms")
-                return result
-            except Exception as e:
-                elapsed = (time.perf_counter() - start) * 1000
-                logger.error(f"{operation} failed after {elapsed:.1f}ms: {e}")
-                raise
-        return wrapper
-    return decorator
-
-
-# =============================================================================
-# LOG HELPERS
-# =============================================================================
-
-def log_request_start(endpoint: str, params: dict) -> None:
-    """Log the start of a request."""
-    logger.info(f"→ {endpoint} | params={params}")
-
-
-def log_request_end(endpoint: str, status: int, latency_ms: float) -> None:
-    """Log the end of a request."""
-    if status < 400:
-        logger.info(f"← {endpoint} | status={status} | {latency_ms:.1f}ms")
+def log_info(message: str, **context: Any) -> None:
+    """Log info message with optional context."""
+    if context:
+        ctx_str = " | ".join(f"{k}={v}" for k, v in context.items())
+        logger.info(f"{message} | {ctx_str}")
     else:
-        logger.warning(f"← {endpoint} | status={status} | {latency_ms:.1f}ms")
+        logger.info(message)
 
 
-def log_cache_hit(key: str) -> None:
-    """Log a cache hit."""
-    logger.debug(f"CACHE HIT: {key}")
-
-
-def log_cache_miss(key: str) -> None:
-    """Log a cache miss."""
-    logger.debug(f"CACHE MISS: {key}")
-
-
-def log_external_call(service: str, endpoint: str) -> None:
-    """Log an external API call."""
-    logger.debug(f"→ External: {service} {endpoint}")
-
-
-def log_llm_call(model: str, tokens: int | None = None) -> None:
-    """Log an LLM call."""
-    if tokens:
-        logger.info(f"LLM: {model} | {tokens} tokens")
+def log_debug(message: str, **context: Any) -> None:
+    """Log debug message with optional context."""
+    if context:
+        ctx_str = " | ".join(f"{k}={v}" for k, v in context.items())
+        logger.debug(f"{message} | {ctx_str}")
     else:
-        logger.info(f"LLM: {model}")
+        logger.debug(message)
 
+
+def log_warning(message: str, **context: Any) -> None:
+    """Log warning message with optional context."""
+    if context:
+        ctx_str = " | ".join(f"{k}={v}" for k, v in context.items())
+        logger.warning(f"{message} | {ctx_str}")
+    else:
+        logger.warning(message)
+
+
+def log_error(message: str, **context: Any) -> None:
+    """Log error message with optional context."""
+    if context:
+        ctx_str = " | ".join(f"{k}={v}" for k, v in context.items())
+        logger.error(f"{message} | {ctx_str}")
+    else:
+        logger.error(message)
+
+
+def log_api_call(service: str, endpoint: str, success: bool, duration_ms: float, **extra) -> None:
+    """Log external API calls."""
+    status = "✓" if success else "✗"
+    level = "info" if success else "warning"
+    msg = f"API {status} {service}/{endpoint} | duration_ms={duration_ms:.1f}"
+    if extra:
+        msg += " | " + " | ".join(f"{k}={v}" for k, v in extra.items())
+    getattr(logger, level)(msg)
+
+
+def log_cache(action: str, key: str, hit: bool = None) -> None:
+    """Log cache operations."""
+    if action == "check":
+        status = "HIT ✓" if hit else "MISS"
+        logger.debug(f"Cache {status} | key={key[:40]}...")
+    else:
+        logger.debug(f"Cache {action.upper()} | key={key[:40]}...")
