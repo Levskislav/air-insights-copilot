@@ -1,0 +1,85 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "OutdoorMate Weather API",
+    "description": "Get weather, air quality and snow data for any place",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://humble-winner-g7wwrw4rp9rcxvq-8000.app.github.dev"
+    }
+  ],
+  "paths": {
+    "/analyze": {
+      "post": {
+        "operationId": "getWeather",
+        "summary": "Get weather for a place",
+        "description": "Get current weather, air quality (PM2.5, PM10), temperature and snow data for a city or location. Just provide a place name like Sofia, Bansko, or Vitosha.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "place_name": {
+                    "type": "string",
+                    "description": "Name of the place (city, town, mountain, etc.) - e.g. Sofia, Bansko, Pamporovo, Vitosha"
+                  },
+                  "hours": {
+                    "type": "integer",
+                    "description": "Hours to forecast (1-168). Default is 6.",
+                    "default": 6,
+                    "minimum": 1,
+                    "maximum": 168
+                  }
+                },
+                "required": ["place_name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Weather data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pm25_avg": {
+                      "type": "number",
+                      "description": "PM2.5 air quality (μg/m³)"
+                    },
+                    "pm10_avg": {
+                      "type": "number",
+                      "description": "PM10 air quality (μg/m³)"
+                    },
+                    "temp_avg": {
+                      "type": "number",
+                      "description": "Temperature (°C)"
+                    },
+                    "snowfall_sum": {
+                      "type": "number",
+                      "description": "Total snowfall (cm)"
+                    },
+                    "snow_depth_avg": {
+                      "type": "number",
+                      "description": "Snow depth on ground (cm)"
+                    },
+                    "guidance_text": {
+                      "type": "string",
+                      "description": "AI-generated weather guidance"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

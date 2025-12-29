@@ -1,0 +1,69 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Weather by GPS",
+    "description": "Get weather using GPS coordinates (latitude, longitude)",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://humble-winner-g7wwrw4rp9rcxvq-8000.app.github.dev"
+    }
+  ],
+  "paths": {
+    "/analyze": {
+      "post": {
+        "operationId": "weatherByGPS",
+        "summary": "Weather by GPS coordinates",
+        "description": "Get weather, air quality and snow data using GPS coordinates. Use when user provides numbers like 42.69, 23.32 or says coordinates.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "latitude": {
+                    "type": "number",
+                    "description": "Latitude (-90 to 90)"
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "description": "Longitude (-180 to 180)"
+                  },
+                  "hours": {
+                    "type": "integer",
+                    "description": "Forecast hours (default 6)",
+                    "default": 6
+                  }
+                },
+                "required": ["latitude", "longitude"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Weather data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pm25_avg": {"type": "number"},
+                    "pm10_avg": {"type": "number"},
+                    "temp_avg": {"type": "number"},
+                    "snowfall_sum": {"type": "number"},
+                    "snow_depth_avg": {"type": "number"},
+                    "guidance_text": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
