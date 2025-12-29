@@ -1,4 +1,4 @@
-# Go-to-Market Plan (0–90 дни) — Air & Insights Copilot (сняг + места + маршрути)
+image.png# Go-to-Market Plan (0–90 дни) — Air & Insights Copilot (сняг + места + маршрути)
 
 Този документ е **практически план за реално използване (adoption)**, след като надградиш продукта с:
 - **snowfall** (снеговалеж) и **snow depth** (снежна покривка/дълбочина)
