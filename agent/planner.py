@@ -3,16 +3,11 @@ agent/planner.py
 ================
 Agent planning module - decides which tools to use.
 
-The planner gives our system an "agentic" feel. Instead of hardcoding
-which APIs to call, we ask the planner "what do we need for this request?"
-
-For now, this is a simple rule-based planner:
-- /analyze always needs air quality + weather data
-
-In the future, this could be:
-- LLM-based planning (ask GPT what tools to use)
-- Conditional planning (skip weather if user only asks about air)
-- Multi-step planning (fetch → validate → compute → reason)
+Currently a simple rule-based planner that always fetches all data.
+The structure allows for future extensions like:
+- Conditional planning based on user query
+- LLM-based planning
+- Seasonal adjustments (e.g., skip snow in summer)
 """
 
 from dataclasses import dataclass
@@ -94,22 +89,3 @@ def plan_for_analyze(lat: float, lon: float, hours: int) -> AnalyzePlan:
     
     return plan
 
-
-# =============================================================================
-# FUTURE: LLM-BASED PLANNING
-# =============================================================================
-
-# In a more advanced system, we could use an LLM to decide the plan:
-#
-# async def plan_with_llm(user_question: str) -> AnalyzePlan:
-#     """
-#     Use LLM to decide which tools to use based on user's question.
-#     
-#     Example:
-#         "Is the air quality good?" -> need_air=True, need_weather=False
-#         "What's the temperature?" -> need_air=False, need_weather=True
-#         "Should I go running?" -> need_air=True, need_weather=True
-#     """
-#     # This would call GitHub Models with a prompt like:
-#     # "Based on this question, which data do we need: air quality, weather, or both?"
-#     pass

@@ -12,6 +12,7 @@ This module provides a resilient HTTP client that automatically:
 1. Retries failed requests (up to 3 times)
 2. Waits between retries (exponential backoff: 0.2s, 0.5s, 1.2s)
 3. Respects timeouts to avoid hanging forever
+4. Uses shared connection pool for better performance
 
 Usage:
     from agent.retry import request_with_retry
@@ -26,9 +27,13 @@ Usage:
 import asyncio
 import httpx
 from typing import Any
+from urllib.parse import urlparse
 
 from agent.logging_config import logger
 from agent.config import DEFAULT_HTTP_TIMEOUT_SECONDS
+from agent.http_client import get_client
+from agent.circuit_breaker import circuit_breakers
+from agent.exceptions import ExternalAPIError
 
 # =============================================================================
 # CONFIGURATION
@@ -58,7 +63,7 @@ async def request_with_retry(
     timeout: float = DEFAULT_TIMEOUT
 ) -> dict[str, Any]:
     """
-    Make an HTTP request with automatic retry on failure.
+    Make an HTTP request with automatic retry on failure and circuit breaker.
     
     Args:
         method: HTTP method ("GET", "POST", etc.)
@@ -72,6 +77,7 @@ async def request_with_retry(
         Parsed JSON response as a dictionary
         
     Raises:
+        ExternalAPIError: If circuit breaker is open
         RuntimeError: If all retries fail
         httpx.HTTPStatusError: If server returns non-retryable error (e.g., 400, 404)
         
@@ -80,6 +86,21 @@ async def request_with_retry(
         >>> print(data["result"])
     """
     
+    # Extract service name from URL for circuit breaker
+    parsed = urlparse(url)
+    service_name = parsed.netloc.split('.')[0]  # e.g., "api" from "api.open-meteo.com"
+    if 'open-meteo' in parsed.netloc:
+        service_name = 'open-meteo'
+    elif 'github' in parsed.netloc:
+        service_name = 'github-models'
+    elif 'google' in parsed.netloc:
+        service_name = 'google-maps'
+    
+    # Check circuit breaker
+    breaker = circuit_breakers.get(service_name)
+    if not breaker.can_execute():
+        raise ExternalAPIError(service_name, "Service circuit breaker is open - too many recent failures")
+    
     # Track the last error for the final exception message
     last_error: Exception | None = None
     
@@ -87,33 +108,41 @@ async def request_with_retry(
     # len(RETRY_DELAYS) = 3, so total attempts = 4 (1 + 3)
     total_attempts = len(RETRY_DELAYS) + 1
     
+    # Get shared HTTP client (connection pooling)
+    client = await get_client()
+    
     for attempt in range(total_attempts):
         try:
-            # Create a new client for each attempt
-            # timeout is set per-request to avoid hanging
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                
-                # Make the actual HTTP request
-                response = await client.request(
-                    method=method,
-                    url=url,
-                    params=params,
-                    headers=headers,
-                    json=json
-                )
-                
-                # Check if we got a retryable status code
-                if response.status_code in RETRY_STATUS_CODES:
-                    logger.warning(f"Attempt {attempt + 1}: Got {response.status_code}, will retry...")
-                    raise RuntimeError(f"Retryable HTTP status: {response.status_code}")
-                
-                # Raise exception for other error status codes (4xx except 429)
-                # This will NOT retry on 400 Bad Request, 404 Not Found, etc.
-                response.raise_for_status()
-                
-                # Success! Parse and return JSON response
-                return response.json()
-                
+            # Make the actual HTTP request using shared client
+            # Override timeout per-request if specified
+            response = await client.request(
+                method=method,
+                url=url,
+                params=params,
+                headers=headers,
+                json=json,
+                timeout=timeout
+            )
+            
+            # Check if we got a retryable status code
+            if response.status_code in RETRY_STATUS_CODES:
+                logger.warning(f"Attempt {attempt + 1}: Got {response.status_code}, will retry...")
+                raise RuntimeError(f"Retryable HTTP status: {response.status_code}")
+            
+            # Raise exception for other error status codes (4xx except 429)
+            # This will NOT retry on 400 Bad Request, 404 Not Found, etc.
+            response.raise_for_status()
+            
+            # Success! Record in circuit breaker and return
+            breaker.record_success()
+            return response.json()
+            
+        except httpx.HTTPStatusError as e:
+            # Don't retry on 4xx client errors (except 429 which is handled above)
+            # These are client mistakes, not transient failures
+            breaker.record_failure()
+            raise
+            
         except Exception as e:
             # Store the error for potential final exception
             last_error = e
@@ -125,7 +154,8 @@ async def request_with_retry(
                 logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay}s...")
                 await asyncio.sleep(delay)
             else:
-                # No more retries - give up and raise the last error
+                # No more retries - record failure and raise
+                breaker.record_failure()
                 logger.error(f"All {total_attempts} attempts failed. Giving up.")
                 raise last_error
 

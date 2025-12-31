@@ -210,30 +210,3 @@ async def fetch_snow(lat: float, lon: float, hours: int) -> dict[str, Any]:
     
     return response
 
-
-# =============================================================================
-# COMBINED FUNCTION (optional convenience)
-# =============================================================================
-
-async def fetch_air_and_weather(lat: float, lon: float, hours: int) -> tuple[dict, dict]:
-    """
-    Fetch both air quality and weather data in parallel.
-    
-    This is a convenience function that calls both APIs and returns
-    both responses. In the future, we could use asyncio.gather()
-    to make these calls in parallel for better performance.
-    
-    Args:
-        lat: Latitude coordinate
-        lon: Longitude coordinate
-        hours: Number of hours to forecast
-        
-    Returns:
-        Tuple of (air_quality_response, weather_response)
-    """
-    # Note: These are called sequentially for simplicity
-    # For better performance, could use asyncio.gather()
-    air_data = await fetch_air_quality(lat, lon, hours)
-    weather_data = await fetch_weather(lat, lon, hours)
-    
-    return air_data, weather_data

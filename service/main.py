@@ -31,6 +31,9 @@ from service.routes import router, limiter
 from agent.config import config, VERSION
 from agent.logging_config import logger, log_info
 
+# Import HTTP client lifecycle handlers
+from agent.http_client import startup as http_startup, shutdown as http_shutdown
+
 
 # =============================================================================
 # LIFESPAN CONTEXT MANAGER (replaces deprecated @app.on_event)
@@ -60,9 +63,13 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("All required secrets configured")
     
+    # Initialize shared HTTP client
+    await http_startup()
+    
     yield  # Application runs here
     
-    # Shutdown (if needed)
+    # Shutdown
+    await http_shutdown()
     logger.info("Shutting down Air & Insights Copilot...")
 
 
@@ -168,17 +175,33 @@ async def health_check():
     Checks:
     - API is running
     - Required secrets are configured
+    - Cache status
     
     Returns 200 if healthy, includes warnings if any.
     """
+    from agent.cache import cache_stats
+    
     missing_secrets = config.validate_required_secrets()
+    cache_info = cache_stats()
+    
+    checks = {
+        "api": "ok",
+        "secrets_configured": len(missing_secrets) == 0,
+        "cache": "ok",
+    }
+    
+    # Determine overall status
+    all_ok = all(v == "ok" or v is True for v in checks.values())
+    status = "healthy" if all_ok and not missing_secrets else "degraded"
     
     return {
-        "status": "healthy" if not missing_secrets else "degraded",
+        "status": status,
         "version": VERSION,
-        "checks": {
-            "api": "ok",
-            "secrets_configured": len(missing_secrets) == 0,
+        "checks": checks,
+        "cache": {
+            "size": cache_info["size"],
+            "maxsize": cache_info["maxsize"],
+            "ttl_seconds": cache_info["ttl"],
         },
         "warnings": [f"Missing secret: {s}" for s in missing_secrets] if missing_secrets else []
     }

@@ -273,8 +273,8 @@ async def generate_guidance_text(
     Note:
         All arguments are keyword-only (*) to prevent mistakes.
     """
-    # Get configuration from environment
-    token = os.getenv("GITHUB_MODELS_TOKEN")
+    # Get configuration from environment (support both old and new names)
+    token = os.getenv("GITHUB_MODELS_TOKEN") or os.getenv("GITHUB_TOKEN")
     model = os.getenv("GITHUB_MODELS_MODEL", "gpt-4o-mini")
     timeout = float(os.getenv("LLM_TIMEOUT_SECONDS", str(DEFAULT_LLM_TIMEOUT_SECONDS)))
     

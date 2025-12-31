@@ -71,8 +71,8 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
         }
     """
     
-    # Get API key from environment
-    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+    # Get API key from environment (support both old and new names)
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY") or os.getenv("GOOGLE_API_KEY")
     
     if not api_key or api_key == "replace_me":
         raise ConfigurationError("GOOGLE_MAPS_API_KEY")
@@ -88,65 +88,61 @@ async def geocode_place(place_name: str, language: str = "en") -> dict[str, Any]
     
     timeout = float(os.getenv("HTTP_TIMEOUT_SECONDS", str(DEFAULT_HTTP_TIMEOUT_SECONDS)))
     
-    try:
-        # Make the API call
-        response = await request_with_retry(
-            method="GET",
-            url=GEOCODE_URL,
-            params=params,
-            timeout=timeout
-        )
-        
-        # Check API status
-        status = response.get("status", "UNKNOWN_ERROR")
-        
-        if status != "OK":
-            log_warning(f"Geocoding failed", place=place_name, status=status)
-            return {
-                "latitude": None,
-                "longitude": None,
-                "formatted_address": None,
-                "found": False,
-                "error": status
-            }
-        
-        # Extract first result (most relevant)
-        results = response.get("results", [])
-        
-        if not results:
-            log_warning(f"Geocoding: no results", place=place_name)
-            return {
-                "latitude": None,
-                "longitude": None,
-                "formatted_address": None,
-                "found": False,
-                "error": "NO_RESULTS"
-            }
-        
-        # Get the first (best) result
-        first_result = results[0]
-        location = first_result["geometry"]["location"]
-        formatted_address = first_result.get("formatted_address", place_name)
-        
-        log_debug(f"Geocoded successfully", address=formatted_address, 
-                  lat=location['lat'], lon=location['lng'])
-        
-        return {
-            "latitude": location["lat"],
-            "longitude": location["lng"],
-            "formatted_address": formatted_address,
-            "found": True
-        }
-        
-    except Exception as e:
-        log_warning(f"Geocoding error", place=place_name, error=str(e))
+    # Make the API call (may throw ExternalAPIError if circuit breaker open)
+    response = await request_with_retry(
+        method="GET",
+        url=GEOCODE_URL,
+        params=params,
+        timeout=timeout
+    )
+    
+    # Check API status
+    status = response.get("status", "UNKNOWN_ERROR")
+    
+    # Handle Google-specific error statuses
+    if status == "REQUEST_DENIED":
+        raise ConfigurationError("GOOGLE_MAPS_API_KEY (invalid or restricted)")
+    elif status == "OVER_QUERY_LIMIT":
+        from agent.exceptions import RateLimitError
+        raise RateLimitError(retry_after=60)
+    elif status not in ("OK", "ZERO_RESULTS"):
+        # Unknown error status - log and return not found
+        log_warning(f"Geocoding unexpected status", place=place_name, status=status)
         return {
             "latitude": None,
             "longitude": None,
             "formatted_address": None,
             "found": False,
-            "error": str(e)
+            "error": status
         }
+    
+    # Extract results
+    results = response.get("results", [])
+    
+    if not results or status == "ZERO_RESULTS":
+        log_debug(f"Geocoding: no results", place=place_name)
+        return {
+            "latitude": None,
+            "longitude": None,
+            "formatted_address": None,
+            "found": False,
+            "error": "ZERO_RESULTS"
+        }
+    
+    # Get the first (best) result
+    first_result = results[0]
+    location = first_result["geometry"]["location"]
+    formatted_address = first_result.get("formatted_address", place_name)
+    
+    log_debug(f"Geocoded successfully", address=formatted_address, 
+              lat=location['lat'], lon=location['lng'])
+    
+    return {
+        "latitude": location["lat"],
+        "longitude": location["lng"],
+        "formatted_address": formatted_address,
+        "found": True
+    }
 
 
 # =============================================================================

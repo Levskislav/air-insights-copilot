@@ -89,9 +89,9 @@ class Config:
         # Rate limiting
         self.rate_limit_per_minute = int(os.getenv("RATE_LIMIT_PER_MINUTE", self.rate_limit_per_minute))
         
-        # API Keys
-        self.github_token = os.getenv("GITHUB_TOKEN")
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        # API Keys (support both old and new names for backwards compatibility)
+        self.github_token = os.getenv("GITHUB_MODELS_TOKEN") or os.getenv("GITHUB_TOKEN")
+        self.google_api_key = os.getenv("GOOGLE_MAPS_API_KEY") or os.getenv("GOOGLE_API_KEY")
         self.nasa_api_key = os.getenv("NASA_API_KEY", "DEMO_KEY")
         
         # Logging
@@ -108,7 +108,7 @@ class Config:
         missing = []
         
         if not self.github_token:
-            missing.append("GITHUB_TOKEN")
+            missing.append("GITHUB_MODELS_TOKEN (or GITHUB_TOKEN)")
         
         # Google API key is optional (geocoding will fail gracefully)
         # NASA API key has a default (DEMO_KEY)

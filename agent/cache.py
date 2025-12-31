@@ -13,9 +13,11 @@ Cache key format: "lat:lon:hours" (e.g., "42.6977:23.3219:6")
 Cache TTL: 10 minutes (600 seconds) - configurable via environment
 
 Uses cachetools.TTLCache which automatically removes expired entries.
+Thread-safe implementation using threading.Lock for concurrent access.
 """
 
 import os
+import threading
 from typing import Any
 
 from cachetools import TTLCache
@@ -35,11 +37,13 @@ CACHE_MAX_SIZE = int(os.getenv("CACHE_MAX_SIZE", str(DEFAULT_CACHE_MAX_SIZE)))
 # =============================================================================
 
 # TTLCache automatically removes entries after TTL expires
-# This is thread-safe for read operations
 _cache: TTLCache = TTLCache(
     maxsize=CACHE_MAX_SIZE,
     ttl=CACHE_TTL_SECONDS
 )
+
+# Lock for thread-safe cache operations
+_cache_lock = threading.Lock()
 
 
 # =============================================================================
@@ -83,7 +87,7 @@ def cache_key(lat: float, lon: float, hours: int) -> str:
 
 def cache_get(key: str) -> Any | None:
     """
-    Get a value from the cache.
+    Get a value from the cache (thread-safe).
     
     Args:
         key: The cache key (from cache_key() function)
@@ -97,12 +101,13 @@ def cache_get(key: str) -> Any | None:
         >>> if result is not None:
         ...     print("Cache hit!")
     """
-    return _cache.get(key)
+    with _cache_lock:
+        return _cache.get(key)
 
 
 def cache_set(key: str, value: Any) -> None:
     """
-    Store a value in the cache.
+    Store a value in the cache (thread-safe).
     
     The value will automatically expire after CACHE_TTL_SECONDS.
     
@@ -114,23 +119,25 @@ def cache_set(key: str, value: Any) -> None:
         >>> key = cache_key(42.6977, 23.3219, 6)
         >>> cache_set(key, {"pm25_avg": 12.5, "guidance_text": "..."})
     """
-    _cache[key] = value
+    with _cache_lock:
+        _cache[key] = value
     log_debug(f"Cache SET", key=key[:40], ttl=CACHE_TTL_SECONDS)
 
 
 def cache_clear() -> None:
     """
-    Clear all entries from the cache.
+    Clear all entries from the cache (thread-safe).
     
     Useful for testing or when you need fresh data.
     """
-    _cache.clear()
+    with _cache_lock:
+        _cache.clear()
     log_debug("Cache cleared")
 
 
 def cache_stats() -> dict:
     """
-    Get cache statistics.
+    Get cache statistics (thread-safe).
     
     Returns:
         Dictionary with cache info:
@@ -142,8 +149,10 @@ def cache_stats() -> dict:
         >>> stats = cache_stats()
         >>> print(f"Cache has {stats['size']} entries")
     """
+    with _cache_lock:
+        size = len(_cache)
     return {
-        "size": len(_cache),
+        "size": size,
         "maxsize": CACHE_MAX_SIZE,
         "ttl": CACHE_TTL_SECONDS
     }

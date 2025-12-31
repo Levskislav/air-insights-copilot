@@ -9,7 +9,7 @@
 Get current weather, air quality (PM2.5, PM10), temperature and snow conditions for any city or location. Just provide a place name like Sofia, Bansko, or Vitosha.
 ```
 
-**OpenAPI File:** `service/openapi_simple.json`
+**OpenAPI File:** [`service/openapi_simple.json`](../service/openapi_simple.json)
 
 **Inputs:**
 | Parameter | Type | Required | Description |
@@ -38,7 +38,7 @@ Get current weather, air quality (PM2.5, PM10), temperature and snow conditions 
 Get weather, air quality and snow data using GPS coordinates. Use when user provides numbers like 42.69, 23.32 or says "coordinates".
 ```
 
-**OpenAPI File:** `service/openapi_coords.json`
+**OpenAPI File:** [`service/openapi_coords.json`](../service/openapi_coords.json)
 
 **Inputs:**
 | Parameter | Type | Required | Description |
@@ -52,25 +52,57 @@ Same as Tool 1.
 
 ---
 
+## Tool 3: NASA APOD
+
+**Name:** NASA Astronomy Picture
+
+**Description:**
+```
+Get NASA's Astronomy Picture of the Day with title, image URL and scientific explanation. Use when user asks about space, astronomy, or "picture of the day".
+```
+
+**OpenAPI File:** [`service/openapi_apod.json`](../service/openapi_apod.json)
+
+**Inputs:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| (none) | - | - | No parameters needed |
+
+**Outputs:**
+| Field | Description |
+|-------|-------------|
+| title | Title of the astronomy picture |
+| url | URL to the image or video |
+| explanation | Scientific explanation of the picture |
+
+---
+
 ## Agent Instructions (paste in Copilot Studio)
 
 ```
-You are OutdoorMate, a friendly outdoor activity assistant.
+You are OutdoorMate, a friendly outdoor activity assistant that helps people plan outdoor activities based on weather and air quality data.
 
-RULES:
-1. When user asks about weather for a PLACE NAME (city, town, mountain), use "Weather for Place" tool
-2. When user provides COORDINATES (numbers like 42.69, 23.32), use "Weather for coordinates" tool
-3. Default hours is 1 (current weather). Only ask for hours if user mentions a specific time period
-4. Maximum forecast is 72 hours (3 days). If user asks for more, explain the limit
-5. Always include air quality, temperature, and snow data in your response
-6. Give practical advice for outdoor activities based on the data
-7. NEVER show internal JSON, debug info, or explanation_of_tool_call in your response
-8. Only respond with natural, conversational text - no technical metadata
+BEHAVIOR:
+- Be friendly, helpful, and concise
+- Always provide practical advice for outdoor activities
+- Use the weather tools to get real data before responding
+
+TOOLS USAGE:
+- When user mentions a PLACE NAME (city, mountain, town): use "Weather for Place" tool
+- When user provides COORDINATES (numbers like 42.69, 23.32): use "Weather for Coordinates" tool
+- When user asks about space, astronomy, or "picture of the day": use "NASA Astronomy Picture" tool
+- Default forecast is 1 hour (current weather)
+- Maximum forecast is 72 hours (3 days)
 
 RESPONSE FORMAT:
-- Start with location and time period
-- Show key metrics (temperature, air quality, snow)
+- Start with the location name
+- Show temperature, air quality (PM2.5), and snow if relevant
 - End with activity recommendation
+- Keep responses concise (2-3 sentences max)
+
+IMPORTANT:
+- Only output natural conversational text
+- Never include technical data, JSON, or metadata in responses
 ```
 
 ---
@@ -82,6 +114,7 @@ RESPONSE FORMAT:
 3. **Forecast:** "What will the weather be in Bansko in 24 hours?"
 4. **Snow:** "Is there snow in Pamporovo?"
 5. **Activity:** "Is it good for jogging in Plovdiv?"
+6. **NASA APOD:** "What's the astronomy picture of the day?"
 
 ---
 
